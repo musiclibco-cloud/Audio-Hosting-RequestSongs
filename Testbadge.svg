@@ -1,28 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 30 20">
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 100 100">
 
-  <!-- Austria Nordisk cross: red base, white cross (off-center) -->
-  <rect width="30" height="20" fill="#ed2939"/>
-  <!-- Vertical (white) bar of cross -->
-  <rect x="8" width="4" height="20" fill="#fff"/>
-  <!-- Horizontal (white) bar of cross -->
-  <rect y="8" width="30" height="4" fill="#fff"/>
-  <!-- Red overlay—make cross thinner (like Norway or Denmark) -->
-  <rect x="9" width="2" height="20" fill="#ed2939"/>
-  <rect y="9" width="30" height="2" fill="#ed2939"/>
+  <!-- Circle background -->
+  <circle cx="50" cy="50" r="48" fill="#0B0D14" />
 
-  <!-- Germany mini-flag in top left corner (canton), vertical tricolor -->
-  <g>
-    <rect x="1" y="1" width="4.5" height="6" rx="0.5" fill="#fff" stroke="#888" stroke-width="0.12"/>
-    <rect x="1.15" y="1.15" width="4.2" height="1.9" fill="#000"/>
-    <rect x="1.15" y="3.05" width="4.2" height="1.9" fill="#dd0000"/>
-    <rect x="1.15" y="4.95" width="4.2" height="1.9" fill="#ffcc00"/>
-  </g>
+  <!-- Nordic cross background: Sweden blue -- a big vertical and horizontal bar -->
+  <rect x="40" y="0" width="20" height="100" fill="#0054A6" />
+  <rect x="0" y="40" width="100" height="20" fill="#0054A6" />
 
-  <!-- Belgium mini-flag in bottom right corner, vertical tricolor -->
-  <g>
-    <rect x="24.5" y="13" width="4.5" height="6" rx="0.5" fill="#fff" stroke="#888" stroke-width="0.12"/>
-    <rect x="24.6" y="13.1" width="1.4" height="5.8" fill="#000"/>
-    <rect x="26.0" y="13.1" width="1.4" height="5.8" fill="#ffd900"/>
-    <rect x="27.4" y="13.1" width="1.4" height="5.8" fill="#fa0000"/>
-  </g>
+  <!-- Inside the cross: Estonia colors thin bands -->
+  <!-- Vertical thin cross bar stripes inside the blue vertical -->
+  <rect x="48" y="0" width="4" height="100" fill="#FFFFFF" />
+  <rect x="48" y="0" width="2" height="100" fill="#000000" />
+  <rect x="50" y="0" width="2" height="100" fill="#2566AF" />
+
+  <!-- Horizontal thin cross bar stripes inside the blue horizontal -->
+  <rect x="0" y="48" width="100" height="4" fill="#FFFFFF" />
+  <rect x="0" y="48" width="100" height="2" fill="#000000" />
+  <rect x="0" y="50" width="100" height="2" fill="#2566AF" />
+
+  <!-- Text "lua" in the center -->
+  <text x="50" y="55" font-family="'Lucida Grande', 'Lucida Sans Unicode', Tahoma, Sans-Serif" font-weight="bold" font-size="26" fill="#FFD700" text-anchor="middle" alignment-baseline="middle">
+    lua
+  </text>
+
 </svg>
+    
