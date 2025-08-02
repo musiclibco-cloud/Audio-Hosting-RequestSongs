@@ -1,4 +1,4 @@
--- ExecutorUILib with toggles, notifications, improved tabs, and consistent theme
+-- ExecutorUILib (Fixed Tabs, Functional Core Features, Consistent Theme)
 
 local UILib = {}
 UILib.__index = UILib
@@ -11,7 +11,7 @@ local theme = {
     textboxBG = Color3.fromRGB(30, 20, 50),
 }
 
-local CORNER_RADIUS = 10 -- less curved squirclcle
+local CORNER_RADIUS = 10
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -35,7 +35,7 @@ local function createInstance(class, props)
     return inst
 end
 
-local function makeDraggable(frame, dragZone) -- window draggable by any click on dragZone (TitleLabel)
+local function makeDraggable(frame, dragZone)
     local dragging, dragStart, startPos
 
     dragZone.InputBegan:Connect(function(input)
@@ -100,13 +100,19 @@ function UILib:CreateWindow(titleText)
 
     makeDraggable(self.MainFrame, self.TitleLabel)
 
+    -- Layout for tab buttons
     self.TabButtonsHolder = createInstance("Frame", {
         Size = UDim2.new(1, -8, 1, -35),
         Position = UDim2.new(0, 4, 0, 35),
         BackgroundTransparency = 1,
         Parent = self.Sidebar,
     })
+    local tabsLayout = Instance.new("UIListLayout")
+    tabsLayout.Parent = self.TabButtonsHolder
+    tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabsLayout.Padding = UDim.new(0, 6)
 
+    -- Content Holder for tab content frames
     self.TabContentHolder = createInstance("Frame", {
         Size = UDim2.new(1, -110, 1, 0),
         Position = UDim2.new(0, 110, 0, 0),
@@ -126,7 +132,7 @@ end
 
 function UILib:CreateTab(name)
     local btn = createInstance("TextButton", {
-        Size = UDim2.new(1, 0, 0, 26),
+        Size = UDim2.new(1, 0, 0, 30),
         BackgroundColor3 = theme.tab,
         TextColor3 = theme.text,
         Font = Enum.Font.SourceSansBold,
@@ -153,25 +159,127 @@ function UILib:CreateTab(name)
     end)
 
     if not self.CurrentTab then
-        self.CurrentTab = name
-        frame.Visible = true
-        btn.BackgroundColor3 = theme.accent
+        self:SelectTab(name)
     end
 
     return frame
 end
 
 function UILib:SelectTab(name)
-    if self.CurrentTab == name then
-        return
-    end
-
     for tabName, tabData in pairs(self.Tabs) do
         local selected = tabName == name
         tabData.Frame.Visible = selected
         tabData.Button.BackgroundColor3 = selected and theme.accent or theme.tab
     end
     self.CurrentTab = name
+end
+
+function UILib:AddButton(parent, text, callback)
+    local btn = createInstance("TextButton", {
+        Size = UDim2.new(0, 180, 0, 32),
+        BackgroundColor3 = theme.accent,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 18,
+        Text = text,
+        Parent = parent,
+        AutoButtonColor = true,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
+    return btn
+end
+
+function UILib:AddLabel(parent, text)
+    local lbl = createInstance("TextLabel", {
+        Size = UDim2.new(0, 180, 0, 30),
+        BackgroundTransparency = 1,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Text = text,
+        Parent = parent,
+        TextWrapped = true,
+    })
+    return lbl
+end
+
+function UILib:AddTextbox(parent, placeholder)
+    local tb = createInstance("TextBox", {
+        Size = UDim2.new(0, 180, 0, 32),
+        BackgroundColor3 = theme.textboxBG,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        PlaceholderText = placeholder or "",
+        Parent = parent,
+        ClearTextOnFocus = false,
+        CornerRadius = CORNER_RADIUS,
+    })
+    return tb
+end
+
+function UILib:AddSideScroll(parent, options)
+    local container = createInstance("Frame", {
+        Size = UDim2.new(0, 200, 0, 36),
+        BackgroundColor3 = theme.tab,
+        Parent = parent,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    local btnLeft = createInstance("TextButton", {
+        Size = UDim2.new(0, 36, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        Text = "<",
+        BackgroundColor3 = theme.accent,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 24,
+        Parent = container,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    local btnRight = createInstance("TextButton", {
+        Size = UDim2.new(0, 36, 1, 0),
+        Position = UDim2.new(1, -36, 0, 0),
+        Text = ">",
+        BackgroundColor3 = theme.accent,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 24,
+        Parent = container,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(1, -72, 1, 0),
+        Position = UDim2.new(0, 36, 0, 0),
+        BackgroundTransparency = 1,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Text = options[1] or "",
+        Parent = container,
+    })
+
+    local index = 1
+
+    btnLeft.MouseButton1Click:Connect(function()
+        index = index > 1 and (index - 1) or #options
+        label.Text = options[index]
+    end)
+
+    btnRight.MouseButton1Click:Connect(function()
+        index = index < #options and (index + 1) or 1
+        label.Text = options[index]
+    end)
+
+    return container, function()
+        return options[index]
+    end
 end
 
 function UILib:AddToggle(parent, text, default, callback)
@@ -228,8 +336,7 @@ end
 
 function UILib:Notify(title, message, duration, notifType)
     duration = duration or 3
-    notifType = notifType or "info" -- "info","warning","error","success"
-
+    notifType = notifType or "info"
     if not self.NotificationGui then
         self.NotificationGui = createInstance("ScreenGui", {Name = "ExecutorNotifications"})
         self.NotificationGui.Parent = game:GetService("CoreGui")
@@ -253,7 +360,6 @@ function UILib:Notify(title, message, duration, notifType)
         BackgroundTransparency = 1,
         Parent = notifFrame,
     })
-
     local msgLabel = createInstance("TextLabel", {
         Text = message,
         Size = UDim2.new(1, -20, 0, 44),
@@ -267,7 +373,6 @@ function UILib:Notify(title, message, duration, notifType)
     })
 
     table.insert(self.Notifications, notifFrame)
-
     notifFrame.BackgroundTransparency = 1
     titleLabel.TextTransparency = 1
     msgLabel.TextTransparency = 1
@@ -294,16 +399,6 @@ function UILib:Notify(title, message, duration, notifType)
             notif.Position = UDim2.new(0.5, -150, 1, -90 - ((i - 1) * 90))
         end
     end)
-end
-
-function UILib:recenterUI()
-    self.MainFrame.Position = UDim2.new(0.5, -self.MainFrame.Size.X.Offset / 2, 0.5, -self.MainFrame.Size.Y.Offset / 2)
-end
-
-function UILib:SetTitle(text)
-    if self.TitleLabel then
-        self.TitleLabel.Text = text
-    end
 end
 
 function UILib:Destroy()
