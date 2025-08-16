@@ -3,13 +3,13 @@ NeruLib.__index = NeruLib
 
 -- Theme based on character's colors
 local theme = {
-    background = Color3.fromRGB(30, 30, 30),        -- dark gray
-    primaryAccent = Color3.fromRGB(255, 204, 51),   -- golden yellow
-    secondaryAccent = Color3.fromRGB(100, 100, 100),-- medium gray
-    text = Color3.fromRGB(245, 235, 210),           -- light warm yellow-beige
-    buttonBG = Color3.fromRGB(50, 50, 50),          -- dark button background
-    buttonHighlight = Color3.fromRGB(255, 204, 51), -- golden highlight
-    textboxBG = Color3.fromRGB(60, 60, 60),         -- slightly lighter dark gray
+    background = Color3.fromRGB(30, 30, 30),
+    primaryAccent = Color3.fromRGB(255, 204, 51),
+    secondaryAccent = Color3.fromRGB(100, 100, 100),
+    text = Color3.fromRGB(245, 235, 210),
+    buttonBG = Color3.fromRGB(50, 50, 50),
+    buttonHighlight = Color3.fromRGB(255, 204, 51),
+    textboxBG = Color3.fromRGB(60, 60, 60),
 }
 
 local CORNER_RADIUS = 10
@@ -35,6 +35,7 @@ local function createInstance(class, props)
     return inst
 end
 
+-- Draggable function without clamps for free movement
 local function makeDraggable(frame, dragZone)
     local dragging, dragStart, startPos
 
@@ -50,17 +51,16 @@ local function makeDraggable(frame, dragZone)
             end)
         end
     end)
+
     dragZone.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            local viewportSize = workspace.CurrentCamera.ViewportSize
-            local newPos = UDim2.new(
+            frame.Position = UDim2.new(
                 startPos.X.Scale,
-                math.clamp(startPos.X.Offset + delta.X, 0, viewportSize.X - frame.AbsoluteSize.X),
+                startPos.X.Offset + delta.X,
                 startPos.Y.Scale,
-                math.clamp(startPos.Y.Offset + delta.Y, 0, viewportSize.Y - frame.AbsoluteSize.Y)
+                startPos.Y.Offset + delta.Y
             )
-            frame.Position = newPos
         end
     end)
 end
@@ -89,14 +89,13 @@ function NeruLib:CreateWindow(titleText)
         CornerRadius = CORNER_RADIUS,
     })
 
-    -- Header frame acts as drag area for whole window
+    -- Header: drag zone and controls
     self.Header = createInstance("Frame", {
         Size = UDim2.new(1, 0, 0, 35),
         BackgroundTransparency = 1,
         Parent = self.MainFrame,
     })
 
-    -- Title label inside header
     self.TitleLabel = createInstance("TextLabel", {
         Size = UDim2.new(1, -90, 1, 0),
         Position = UDim2.new(0, 10, 0, 0),
@@ -110,7 +109,6 @@ function NeruLib:CreateWindow(titleText)
         Parent = self.Header,
     })
 
-    -- Close button
     self.CloseButton = createInstance("TextButton", {
         Size = UDim2.new(0, 35, 0, 25),
         Position = UDim2.new(1, -40, 0, 5),
@@ -124,7 +122,6 @@ function NeruLib:CreateWindow(titleText)
         CornerRadius = CORNER_RADIUS,
     })
 
-    -- Minimize button
     self.MinimizeButton = createInstance("TextButton", {
         Size = UDim2.new(0, 35, 0, 25),
         Position = UDim2.new(1, -80, 0, 5),
@@ -138,7 +135,6 @@ function NeruLib:CreateWindow(titleText)
         CornerRadius = CORNER_RADIUS,
     })
 
-    -- Draggable by header panel
     makeDraggable(self.MainFrame, self.Header)
 
     self.CloseButton.MouseEnter:Connect(function()
@@ -166,7 +162,6 @@ function NeruLib:CreateWindow(titleText)
         minimized = not minimized
         self.TabContentHolder.Visible = not minimized
         self.Sidebar.Visible = not minimized
-        -- Optionally change window size when minimized
         if minimized then
             self.MainFrame.Size = UDim2.new(0, 200, 0, 50)
         else
@@ -174,7 +169,6 @@ function NeruLib:CreateWindow(titleText)
         end
     end)
 
-    -- Tab buttons container inside sidebar
     self.TabButtonsHolder = createInstance("Frame", {
         Size = UDim2.new(1, -8, 1, -35),
         Position = UDim2.new(0, 4, 0, 35),
@@ -187,7 +181,6 @@ function NeruLib:CreateWindow(titleText)
     tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     tabsLayout.Padding = UDim.new(0, 6)
 
-    -- Content holder
     self.TabContentHolder = createInstance("Frame", {
         Size = UDim2.new(1, -110, 1, 0),
         Position = UDim2.new(0, 110, 0, 35),
@@ -350,7 +343,6 @@ function NeruLib:AddToggle(parent, text, default, callback)
     end
 end
 
--- Toggle UI visibility method
 function NeruLib:ToggleUI()
     if self.ScreenGui then
         self.ScreenGui.Enabled = not self.ScreenGui.Enabled
