@@ -89,16 +89,17 @@ function NeruLib:CreateWindow(titleText)
         CornerRadius = CORNER_RADIUS,
     })
 
-    -- Header in sidebar for title and drag handle
-    self.SidebarHeader = createInstance("Frame", {
+    -- Header frame acts as drag area for whole window
+    self.Header = createInstance("Frame", {
         Size = UDim2.new(1, 0, 0, 35),
         BackgroundTransparency = 1,
-        Parent = self.Sidebar,
+        Parent = self.MainFrame,
     })
 
+    -- Title label inside header
     self.TitleLabel = createInstance("TextLabel", {
-        Size = UDim2.new(1, -10, 1, 0),
-        Position = UDim2.new(0, 5, 0, 0),
+        Size = UDim2.new(1, -90, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
         BackgroundTransparency = 1,
         TextColor3 = theme.primaryAccent,
         Font = Enum.Font.SourceSansBold,
@@ -106,12 +107,74 @@ function NeruLib:CreateWindow(titleText)
         Text = titleText,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
-        Parent = self.SidebarHeader,
+        Parent = self.Header,
     })
 
-    makeDraggable(self.MainFrame, self.SidebarHeader)
+    -- Close button
+    self.CloseButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 35, 0, 25),
+        Position = UDim2.new(1, -40, 0, 5),
+        BackgroundColor3 = theme.buttonBG,
+        Text = "X",
+        TextColor3 = theme.primaryAccent,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 20,
+        AutoButtonColor = false,
+        Parent = self.Header,
+        CornerRadius = CORNER_RADIUS,
+    })
 
-    -- Tabs container below the header
+    -- Minimize button
+    self.MinimizeButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 35, 0, 25),
+        Position = UDim2.new(1, -80, 0, 5),
+        BackgroundColor3 = theme.buttonBG,
+        Text = "_",
+        TextColor3 = theme.primaryAccent,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 20,
+        AutoButtonColor = false,
+        Parent = self.Header,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    -- Draggable by header panel
+    makeDraggable(self.MainFrame, self.Header)
+
+    self.CloseButton.MouseEnter:Connect(function()
+        self.CloseButton.BackgroundColor3 = theme.primaryAccent
+        self.CloseButton.TextColor3 = theme.background
+    end)
+    self.CloseButton.MouseLeave:Connect(function()
+        self.CloseButton.BackgroundColor3 = theme.buttonBG
+        self.CloseButton.TextColor3 = theme.primaryAccent
+    end)
+    self.CloseButton.MouseButton1Click:Connect(function()
+        self.ScreenGui:Destroy()
+    end)
+
+    local minimized = false
+    self.MinimizeButton.MouseEnter:Connect(function()
+        self.MinimizeButton.BackgroundColor3 = theme.primaryAccent
+        self.MinimizeButton.TextColor3 = theme.background
+    end)
+    self.MinimizeButton.MouseLeave:Connect(function()
+        self.MinimizeButton.BackgroundColor3 = theme.buttonBG
+        self.MinimizeButton.TextColor3 = theme.primaryAccent
+    end)
+    self.MinimizeButton.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        self.TabContentHolder.Visible = not minimized
+        self.Sidebar.Visible = not minimized
+        -- Optionally change window size when minimized
+        if minimized then
+            self.MainFrame.Size = UDim2.new(0, 200, 0, 50)
+        else
+            self.MainFrame.Size = UDim2.new(0, 500, 0, 320)
+        end
+    end)
+
+    -- Tab buttons container inside sidebar
     self.TabButtonsHolder = createInstance("Frame", {
         Size = UDim2.new(1, -8, 1, -35),
         Position = UDim2.new(0, 4, 0, 35),
@@ -124,10 +187,10 @@ function NeruLib:CreateWindow(titleText)
     tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     tabsLayout.Padding = UDim.new(0, 6)
 
-    -- Content area to the right of sidebar
+    -- Content holder
     self.TabContentHolder = createInstance("Frame", {
         Size = UDim2.new(1, -110, 1, 0),
-        Position = UDim2.new(0, 110, 0, 0),
+        Position = UDim2.new(0, 110, 0, 35),
         BackgroundTransparency = 1,
         Parent = self.MainFrame,
         CornerRadius = CORNER_RADIUS,
@@ -136,7 +199,6 @@ function NeruLib:CreateWindow(titleText)
     self.Tabs = {}
     self.CurrentTab = nil
 
-    -- Notifications container (optional)
     self.Notifications = {}
     self.NotificationGui = nil
 
@@ -146,7 +208,7 @@ end
 function NeruLib:CreateTab(name)
     local btn = createInstance("TextButton", {
         Size = UDim2.new(1, 0, 0, 30),
-        BackgroundColor3 = theme.tab,
+        BackgroundColor3 = theme.secondaryAccent,
         TextColor3 = theme.text,
         Font = Enum.Font.SourceSansBold,
         TextSize = 16,
@@ -285,6 +347,13 @@ function NeruLib:AddToggle(parent, text, default, callback)
             toggleBtn.Text = state and "ON" or "OFF"
         end
         return state
+    end
+end
+
+-- Toggle UI visibility method
+function NeruLib:ToggleUI()
+    if self.ScreenGui then
+        self.ScreenGui.Enabled = not self.ScreenGui.Enabled
     end
 end
 
