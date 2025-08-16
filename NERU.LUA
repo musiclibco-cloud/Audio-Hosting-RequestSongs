@@ -182,7 +182,7 @@ function NeruLib:CreateWindow(titleText)
     tabsLayout.Padding = UDim.new(0, 6)
 
     self.TabContentHolder = createInstance("Frame", {
-        Size = UDim2.new(1, -110, 1, 0),
+        Size = UDim2.new(1, -110, 1, -35), -- fixed height to align with sidebar
         Position = UDim2.new(0, 110, 0, 35),
         BackgroundTransparency = 1,
         Parent = self.MainFrame,
