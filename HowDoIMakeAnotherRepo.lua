@@ -71,7 +71,7 @@ function UILib.CreateWindow(title)
     -- Title label
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(0, 350, 0, 40)
+    titleLabel.Size = UDim2.new(0, 310, 0, 40)
     titleLabel.Position = UDim2.new(0, 45, 0, 10)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title or "Window"
@@ -267,75 +267,85 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
     return frame, function() return options[index], index end
 end
 
--- Create side tabs on the left of the window
-function UILib.CreateSideTabs(window, tabNames)
+-- Create baked-in Orion style side tabs integrated into window
+function UILib.CreateWindowWithSideTabs(title, tabNames)
+    local window, screenGui = UILib.CreateWindow(title)
+
     local tabsContainer = Instance.new("Frame")
     tabsContainer.Name = "TabsContainer"
     tabsContainer.Size = UDim2.new(0, 110, 1, 0)
     tabsContainer.Position = UDim2.new(0, 0, 0, 0)
-    tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+    tabsContainer.BackgroundColor3 = Color3.fromRGB(28, 4, 4)
     tabsContainer.Parent = window
+
+    -- UIListLayout for tab spacing and alignment
+    local tabList = Instance.new("UIListLayout")
+    tabList.Padding = UDim.new(0, 8)
+    tabList.SortOrder = Enum.SortOrder.LayoutOrder
+    tabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    tabList.Parent = tabsContainer
 
     local tabFrames = {}
     local buttons = {}
     local selectedTab
 
-    local buttonHeight = window.Size.Y.Offset / #tabNames
-
     for i, tabName in ipairs(tabNames) do
-        -- Create tab button
         local button = Instance.new("TextButton")
         button.Name = tabName .. "TabButton"
-        button.Size = UDim2.new(1, 0, 0, buttonHeight)
-        button.Position = UDim2.new(0, 0, (i-1) * buttonHeight / window.Size.Y.Offset, 0)
-        button.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
+        button.Size = UDim2.new(1, -18, 0, 48)
+        button.BackgroundColor3 = Color3.fromRGB(50, 8, 8)
         button.Text = tabName
-        button.TextColor3 = Color3.fromRGB(255, 150, 150)
+        button.TextColor3 = Color3.fromRGB(255, 180, 180)
+        button.TextSize = 18
         button.Font = Enum.Font.SourceSansBold
-        button.TextSize = 20
+        button.LayoutOrder = i
         button.Parent = tabsContainer
-        button.TextWrapped = true
 
+        -- Rounded corners on right side
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, 9)
         corner.Parent = button
 
-        -- Create tab content frame (initially hidden)
+        button.MouseButton1Click:Connect(function()
+            if selectedTab ~= tabName then
+                if selectedTab then
+                    buttons[selectedTab].BackgroundColor3 = Color3.fromRGB(50, 8, 8)
+                    buttons[selectedTab].TextColor3 = Color3.fromRGB(255, 180, 180)
+                    tabFrames[selectedTab].Visible = false
+                end
+                button.BackgroundColor3 = Color3.fromRGB(230, 32, 32)
+                button.TextColor3 = Color3.fromRGB(255,255,255)
+                tabFrames[tabName].Visible = true
+                selectedTab = tabName
+            end
+        end)
+
+        buttons[tabName] = button
+
         local contentFrame = Instance.new("Frame")
         contentFrame.Name = tabName .. "Content"
-        contentFrame.Size = UDim2.new(1, -110, 1, 0)
-        contentFrame.Position = UDim2.new(0, 110, 0, 0)
+        contentFrame.Size = UDim2.new(1, -130, 1, -28)
+        contentFrame.Position = UDim2.new(0, 120, 0, 18)
         contentFrame.BackgroundTransparency = 1
         contentFrame.Visible = false
         contentFrame.Parent = window
         tabFrames[tabName] = contentFrame
-        buttons[tabName] = button
 
-        -- Button click to switch tabs
-        button.MouseButton1Click:Connect(function()
-            if selectedTab ~= tabName then
-                -- Hide previous
-                if selectedTab then
-                    tabFrames[selectedTab].Visible = false
-                    buttons[selectedTab].BackgroundColor3 = Color3.fromRGB(140, 0, 0)
-                end
-                -- Show current
-                contentFrame.Visible = true
-                button.BackgroundColor3 = Color3.fromRGB(220, 0, 0)
-                selectedTab = tabName
-            end
-        end)
+        local pad = Instance.new("UIPadding")
+        pad.PaddingTop = UDim.new(0, 12)
+        pad.PaddingLeft = UDim.new(0, 18)
+        pad.PaddingRight = UDim.new(0, 18)
+        pad.Parent = contentFrame
     end
 
-    -- Activate first tab by default
     if #tabNames > 0 then
-        buttons[tabNames[1]].BackgroundColor3 = Color3.fromRGB(220, 0, 0)
+        buttons[tabNames[1]].BackgroundColor3 = Color3.fromRGB(230, 32, 32)
+        buttons[tabNames[1]].TextColor3 = Color3.fromRGB(255,255,255)
         tabFrames[tabNames[1]].Visible = true
         selectedTab = tabNames[1]
     end
 
-    -- Return the tab frames so user can add content to each tab
-    return tabFrames
+    return window, screenGui, tabFrames
 end
 
 return UILib
