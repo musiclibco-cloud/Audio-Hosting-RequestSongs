@@ -54,8 +54,8 @@ function UILib.CreateWindow(title)
 
     local frame = Instance.new("Frame")
     frame.Name = "MainFrame"
-    frame.Size = UDim2.new(0, 320, 0, 280)
-    frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+    frame.Size = UDim2.new(0, 400, 0, 350)
+    frame.Position = UDim2.new(0.3, 0, 0.2, 0)
     frame.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
@@ -71,8 +71,8 @@ function UILib.CreateWindow(title)
     -- Title label
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(1, -50, 0, 40)
-    titleLabel.Position = UDim2.new(0, 15, 0, 10)
+    titleLabel.Size = UDim2.new(0, 350, 0, 40)
+    titleLabel.Position = UDim2.new(0, 45, 0, 10)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title or "Window"
     titleLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
@@ -85,7 +85,7 @@ function UILib.CreateWindow(title)
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 40, 0, 40)
-    closeButton.Position = UDim2.new(1, -50, 0, 5)
+    closeButton.Position = UDim2.new(0, 350, 0, 5)
     closeButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
     closeButton.AutoButtonColor = false
     closeButton.Text = "X"
@@ -119,7 +119,7 @@ function UILib.CreateButton(parent, buttonName, text, position, size)
     local button = Instance.new("TextButton")
     button.Name = buttonName or "Button"
     button.Text = text or "Button"
-    button.Size = size or UDim2.new(0, 120, 0, 40)
+    button.Size = size or UDim2.new(0, 140, 0, 40)
     button.Position = position or UDim2.new(0, 10, 0, 90)
     button.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
     button.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -147,7 +147,7 @@ end
 -- Create a textbox
 function UILib.CreateTextbox(parent, placeholder, position)
     local textbox = Instance.new("TextBox")
-    textbox.Size = UDim2.new(0, 260, 0, 40)
+    textbox.Size = UDim2.new(0, 320, 0, 40)
     textbox.Position = position or UDim2.new(0, 10, 0, 50)
     textbox.PlaceholderText = placeholder or "Enter text..."
     textbox.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
@@ -168,7 +168,7 @@ end
 function UILib.CreateToggle(parent, toggleName, defaultValue, position, callback)
     local toggle = Instance.new("TextButton")
     toggle.Name = toggleName or "Toggle"
-    toggle.Size = UDim2.new(0, 120, 0, 40)
+    toggle.Size = UDim2.new(0, 140, 0, 40)
     toggle.Position = position or UDim2.new(0, 10, 0, 130)
     toggle.BackgroundColor3 = defaultValue and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(70, 0, 0)
     toggle.Text = defaultValue and "ON" or "OFF"
@@ -201,7 +201,7 @@ end
 function UILib.CreateSideSelector(parent, name, options, position, callback)
     local frame = Instance.new("Frame")
     frame.Name = name or "SideSelector"
-    frame.Size = UDim2.new(0, 220, 0, 50)
+    frame.Size = UDim2.new(0, 240, 0, 50)
     frame.Position = position or UDim2.new(0, 10, 0, 180)
     frame.BackgroundTransparency = 1
     frame.Parent = parent
@@ -223,7 +223,7 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
     -- Right button
     local right = Instance.new("TextButton")
     right.Size = UDim2.new(0, 50, 0, 50)
-    right.Position = UDim2.new(0, 170, 0, 0)
+    right.Position = UDim2.new(0, 190, 0, 0)
     right.Text = ">"
     right.Font = Enum.Font.SourceSansBold
     right.TextSize = 30
@@ -236,7 +236,7 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
 
     -- Center label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 120, 0, 50)
+    label.Size = UDim2.new(0, 140, 0, 50)
     label.Position = UDim2.new(0, 50, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = options and options[1] or "Option"
@@ -267,11 +267,11 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
     return frame, function() return options[index], index end
 end
 
--- Create tab system on top of the window
-function UILib.CreateTabs(window, tabNames)
+-- Create side tabs on the left of the window
+function UILib.CreateSideTabs(window, tabNames)
     local tabsContainer = Instance.new("Frame")
     tabsContainer.Name = "TabsContainer"
-    tabsContainer.Size = UDim2.new(1, 0, 0, 40)
+    tabsContainer.Size = UDim2.new(0, 110, 1, 0)
     tabsContainer.Position = UDim2.new(0, 0, 0, 0)
     tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     tabsContainer.Parent = window
@@ -280,20 +280,21 @@ function UILib.CreateTabs(window, tabNames)
     local buttons = {}
     local selectedTab
 
-    local buttonWidth = window.Size.X.Offset / #tabNames
+    local buttonHeight = window.Size.Y.Offset / #tabNames
 
     for i, tabName in ipairs(tabNames) do
         -- Create tab button
         local button = Instance.new("TextButton")
         button.Name = tabName .. "TabButton"
-        button.Size = UDim2.new(0, buttonWidth, 1, 0)
-        button.Position = UDim2.new((i-1) * buttonWidth / window.Size.X.Offset, 0, 0, 0)
+        button.Size = UDim2.new(1, 0, 0, buttonHeight)
+        button.Position = UDim2.new(0, 0, (i-1) * buttonHeight / window.Size.Y.Offset, 0)
         button.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
         button.Text = tabName
         button.TextColor3 = Color3.fromRGB(255, 150, 150)
         button.Font = Enum.Font.SourceSansBold
         button.TextSize = 20
         button.Parent = tabsContainer
+        button.TextWrapped = true
 
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, 9)
@@ -302,8 +303,8 @@ function UILib.CreateTabs(window, tabNames)
         -- Create tab content frame (initially hidden)
         local contentFrame = Instance.new("Frame")
         contentFrame.Name = tabName .. "Content"
-        contentFrame.Size = UDim2.new(1, 0, 1, -40)
-        contentFrame.Position = UDim2.new(0, 0, 0, 40)
+        contentFrame.Size = UDim2.new(1, -110, 1, 0)
+        contentFrame.Position = UDim2.new(0, 110, 0, 0)
         contentFrame.BackgroundTransparency = 1
         contentFrame.Visible = false
         contentFrame.Parent = window
