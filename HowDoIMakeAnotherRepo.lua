@@ -54,15 +54,15 @@ function UILib.CreateWindow(title)
 
     local frame = Instance.new("Frame")
     frame.Name = "MainFrame"
-    frame.Size = UDim2.new(0, 320, 0, 240)
+    frame.Size = UDim2.new(0, 320, 0, 280)
     frame.Position = UDim2.new(0.4, 0, 0.3, 0)
     frame.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
-    -- Rounded corners
+    -- Rounded corners 9px
     local frameCorner = Instance.new("UICorner")
-    frameCorner.CornerRadius = UDim.new(0, 20)
+    frameCorner.CornerRadius = UDim.new(0, 9)
     frameCorner.Parent = frame
 
     -- Make draggable
@@ -95,7 +95,7 @@ function UILib.CreateWindow(title)
     closeButton.Parent = frame
 
     local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 15)
+    closeCorner.CornerRadius = UDim.new(0, 9)
     closeCorner.Parent = closeButton
 
     closeButton.MouseEnter:Connect(function()
@@ -128,7 +128,7 @@ function UILib.CreateButton(parent, buttonName, text, position, size)
     button.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 14)
+    corner.CornerRadius = UDim.new(0, 9)
     corner.Parent = button
 
     button.AutoButtonColor = false
@@ -158,7 +158,7 @@ function UILib.CreateTextbox(parent, placeholder, position)
     textbox.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 15)
+    corner.CornerRadius = UDim.new(0, 9)
     corner.Parent = textbox
 
     return textbox
@@ -178,7 +178,7 @@ function UILib.CreateToggle(parent, toggleName, defaultValue, position, callback
     toggle.Parent = parent
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 15)
+    corner.CornerRadius = UDim.new(0, 9)
     corner.Parent = toggle
 
     local state = defaultValue or false
@@ -218,7 +218,7 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
     left.Parent = frame
 
     local leftCorner = Instance.new("UICorner", left)
-    leftCorner.CornerRadius = UDim.new(0, 15)
+    leftCorner.CornerRadius = UDim.new(0, 9)
 
     -- Right button
     local right = Instance.new("TextButton")
@@ -232,7 +232,7 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
     right.Parent = frame
 
     local rightCorner = Instance.new("UICorner", right)
-    rightCorner.CornerRadius = UDim.new(0, 15)
+    rightCorner.CornerRadius = UDim.new(0, 9)
 
     -- Center label
     local label = Instance.new("TextLabel")
@@ -265,6 +265,76 @@ function UILib.CreateSideSelector(parent, name, options, position, callback)
     end)
 
     return frame, function() return options[index], index end
+end
+
+-- Create tab system on top of the window
+function UILib.CreateTabs(window, tabNames)
+    local tabsContainer = Instance.new("Frame")
+    tabsContainer.Name = "TabsContainer"
+    tabsContainer.Size = UDim2.new(1, 0, 0, 40)
+    tabsContainer.Position = UDim2.new(0, 0, 0, 0)
+    tabsContainer.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+    tabsContainer.Parent = window
+
+    local tabFrames = {}
+    local buttons = {}
+    local selectedTab
+
+    local buttonWidth = window.Size.X.Offset / #tabNames
+
+    for i, tabName in ipairs(tabNames) do
+        -- Create tab button
+        local button = Instance.new("TextButton")
+        button.Name = tabName .. "TabButton"
+        button.Size = UDim2.new(0, buttonWidth, 1, 0)
+        button.Position = UDim2.new((i-1) * buttonWidth / window.Size.X.Offset, 0, 0, 0)
+        button.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
+        button.Text = tabName
+        button.TextColor3 = Color3.fromRGB(255, 150, 150)
+        button.Font = Enum.Font.SourceSansBold
+        button.TextSize = 20
+        button.Parent = tabsContainer
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 9)
+        corner.Parent = button
+
+        -- Create tab content frame (initially hidden)
+        local contentFrame = Instance.new("Frame")
+        contentFrame.Name = tabName .. "Content"
+        contentFrame.Size = UDim2.new(1, 0, 1, -40)
+        contentFrame.Position = UDim2.new(0, 0, 0, 40)
+        contentFrame.BackgroundTransparency = 1
+        contentFrame.Visible = false
+        contentFrame.Parent = window
+        tabFrames[tabName] = contentFrame
+        buttons[tabName] = button
+
+        -- Button click to switch tabs
+        button.MouseButton1Click:Connect(function()
+            if selectedTab ~= tabName then
+                -- Hide previous
+                if selectedTab then
+                    tabFrames[selectedTab].Visible = false
+                    buttons[selectedTab].BackgroundColor3 = Color3.fromRGB(140, 0, 0)
+                end
+                -- Show current
+                contentFrame.Visible = true
+                button.BackgroundColor3 = Color3.fromRGB(220, 0, 0)
+                selectedTab = tabName
+            end
+        end)
+    end
+
+    -- Activate first tab by default
+    if #tabNames > 0 then
+        buttons[tabNames[1]].BackgroundColor3 = Color3.fromRGB(220, 0, 0)
+        tabFrames[tabNames[1]].Visible = true
+        selectedTab = tabNames[1]
+    end
+
+    -- Return the tab frames so user can add content to each tab
+    return tabFrames
 end
 
 return UILib
