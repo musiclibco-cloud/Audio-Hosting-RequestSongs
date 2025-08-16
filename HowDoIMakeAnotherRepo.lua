@@ -1,30 +1,48 @@
-local UILib = {}
+local NeruLib = {}
+NeruLib.__index = NeruLib
+
+-- Theme based on character's colors
+local theme = {
+    background = Color3.fromRGB(30, 30, 30),        -- dark gray
+    primaryAccent = Color3.fromRGB(255, 204, 51),   -- golden yellow
+    secondaryAccent = Color3.fromRGB(100, 100, 100),-- medium gray
+    text = Color3.fromRGB(245, 235, 210),           -- light warm yellow-beige
+    buttonBG = Color3.fromRGB(50, 50, 50),          -- dark button background
+    buttonHighlight = Color3.fromRGB(255, 204, 51), -- golden highlight
+    textboxBG = Color3.fromRGB(60, 60, 60),         -- slightly lighter dark gray
+}
+
+local CORNER_RADIUS = 10
 
 local UserInputService = game:GetService("UserInputService")
 
--- Helper to make Frame draggable on any device
-function UILib.MakeDraggable(frame)
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
+local function addCorner(inst, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius)
+    corner.Parent = inst
+end
 
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+local function createInstance(class, props)
+    local inst = Instance.new(class)
+    for k, v in pairs(props) do
+        if k ~= "CornerRadius" then
+            inst[k] = v
+        end
     end
+    if props.CornerRadius then
+        addCorner(inst, props.CornerRadius)
+    end
+    return inst
+end
 
-    frame.InputBegan:Connect(function(input)
+local function makeDraggable(frame, dragZone)
+    local dragging, dragStart, startPos
+
+    dragZone.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -32,320 +50,242 @@ function UILib.MakeDraggable(frame)
             end)
         end
     end)
-
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
+    dragZone.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            local viewportSize = workspace.CurrentCamera.ViewportSize
+            local newPos = UDim2.new(
+                startPos.X.Scale,
+                math.clamp(startPos.X.Offset + delta.X, 0, viewportSize.X - frame.AbsoluteSize.X),
+                startPos.Y.Scale,
+                math.clamp(startPos.Y.Offset + delta.Y, 0, viewportSize.Y - frame.AbsoluteSize.Y)
+            )
+            frame.Position = newPos
         end
     end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
 end
 
--- Create a draggable window with close button
-function UILib.CreateWindow(title)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "UILibScreenGui"
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+function NeruLib:CreateWindow(titleText)
+    local self = setmetatable({}, NeruLib)
 
-    local frame = Instance.new("Frame")
-    frame.Name = "MainFrame"
-    frame.Size = UDim2.new(0, 400, 0, 350)
-    frame.Position = UDim2.new(0.3, 0, 0.2, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
+    self.ScreenGui = createInstance("ScreenGui", {Name = "NeruLib"})
+    self.ScreenGui.Parent = game:GetService("CoreGui")
 
-    -- Rounded corners 9px
-    local frameCorner = Instance.new("UICorner")
-    frameCorner.CornerRadius = UDim.new(0, 9)
-    frameCorner.Parent = frame
+    self.MainFrame = createInstance("Frame", {
+        Size = UDim2.new(0, 500, 0, 320),
+        Position = UDim2.new(0.5, -250, 0.5, -160),
+        BackgroundColor3 = theme.background,
+        BorderSizePixel = 0,
+        Parent = self.ScreenGui,
+        CornerRadius = CORNER_RADIUS,
+    })
 
-    -- Make draggable
-    UILib.MakeDraggable(frame)
+    -- Sidebar
+    self.Sidebar = createInstance("Frame", {
+        Size = UDim2.new(0, 110, 1, 0),
+        BackgroundColor3 = theme.secondaryAccent,
+        BorderSizePixel = 0,
+        Parent = self.MainFrame,
+        CornerRadius = CORNER_RADIUS,
+    })
 
-    -- Title label
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(0, 310, 0, 40)
-    titleLabel.Position = UDim2.new(0, 45, 0, 10)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = title or "Window"
-    titleLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.TextSize = 26
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = frame
+    -- Header in sidebar for title and drag handle
+    self.SidebarHeader = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 35),
+        BackgroundTransparency = 1,
+        Parent = self.Sidebar,
+    })
 
-    -- Close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 40, 0, 40)
-    closeButton.Position = UDim2.new(0, 350, 0, 5)
-    closeButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-    closeButton.AutoButtonColor = false
-    closeButton.Text = "X"
-    closeButton.TextColor3 = Color3.fromRGB(255, 200, 200)
-    closeButton.Font = Enum.Font.SourceSansBold
-    closeButton.TextSize = 28
-    closeButton.Parent = frame
+    self.TitleLabel = createInstance("TextLabel", {
+        Size = UDim2.new(1, -10, 1, 0),
+        Position = UDim2.new(0, 5, 0, 0),
+        BackgroundTransparency = 1,
+        TextColor3 = theme.primaryAccent,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 22,
+        Text = titleText,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        Parent = self.SidebarHeader,
+    })
 
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 9)
-    closeCorner.Parent = closeButton
+    makeDraggable(self.MainFrame, self.SidebarHeader)
 
-    closeButton.MouseEnter:Connect(function()
-        closeButton.BackgroundColor3 = Color3.fromRGB(255, 30, 30)
-        closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-    closeButton.MouseLeave:Connect(function()
-        closeButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        closeButton.TextColor3 = Color3.fromRGB(255, 200, 200)
-    end)
+    -- Tabs container below the header
+    self.TabButtonsHolder = createInstance("Frame", {
+        Size = UDim2.new(1, -8, 1, -35),
+        Position = UDim2.new(0, 4, 0, 35),
+        BackgroundTransparency = 1,
+        Parent = self.Sidebar,
+    })
 
-    closeButton.MouseButton1Click:Connect(function()
-        screenGui:Destroy()
-    end)
+    local tabsLayout = Instance.new("UIListLayout")
+    tabsLayout.Parent = self.TabButtonsHolder
+    tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabsLayout.Padding = UDim.new(0, 6)
 
-    return frame, screenGui
+    -- Content area to the right of sidebar
+    self.TabContentHolder = createInstance("Frame", {
+        Size = UDim2.new(1, -110, 1, 0),
+        Position = UDim2.new(0, 110, 0, 0),
+        BackgroundTransparency = 1,
+        Parent = self.MainFrame,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    self.Tabs = {}
+    self.CurrentTab = nil
+
+    -- Notifications container (optional)
+    self.Notifications = {}
+    self.NotificationGui = nil
+
+    return self
 end
 
--- Create a button
-function UILib.CreateButton(parent, buttonName, text, position, size)
-    local button = Instance.new("TextButton")
-    button.Name = buttonName or "Button"
-    button.Text = text or "Button"
-    button.Size = size or UDim2.new(0, 140, 0, 40)
-    button.Position = position or UDim2.new(0, 10, 0, 90)
-    button.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
-    button.TextColor3 = Color3.fromRGB(255, 100, 100)
-    button.Font = Enum.Font.SourceSansBold
-    button.TextSize = 22
-    button.Parent = parent
+function NeruLib:CreateTab(name)
+    local btn = createInstance("TextButton", {
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = theme.tab,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 16,
+        Text = name,
+        Parent = self.TabButtonsHolder,
+        CornerRadius = CORNER_RADIUS,
+        AutoButtonColor = false,
+    })
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 9)
-    corner.Parent = button
+    local frame = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = theme.background,
+        BorderSizePixel = 0,
+        Visible = false,
+        Parent = self.TabContentHolder,
+        CornerRadius = CORNER_RADIUS,
+    })
 
-    button.AutoButtonColor = false
-    button.MouseEnter:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.Tabs[name] = {Button = btn, Frame = frame}
+
+    btn.MouseButton1Click:Connect(function()
+        self:SelectTab(name)
     end)
-    button.MouseLeave:Connect(function()
-        button.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
-        button.TextColor3 = Color3.fromRGB(255, 100, 100)
-    end)
 
-    return button
+    if not self.CurrentTab then
+        self:SelectTab(name)
+    end
+
+    return frame
 end
 
--- Create a textbox
-function UILib.CreateTextbox(parent, placeholder, position)
-    local textbox = Instance.new("TextBox")
-    textbox.Size = UDim2.new(0, 320, 0, 40)
-    textbox.Position = position or UDim2.new(0, 10, 0, 50)
-    textbox.PlaceholderText = placeholder or "Enter text..."
-    textbox.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
-    textbox.TextColor3 = Color3.fromRGB(255, 150, 150)
-    textbox.Font = Enum.Font.SourceSans
-    textbox.TextSize = 20
-    textbox.ClearTextOnFocus = false
-    textbox.Parent = parent
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 9)
-    corner.Parent = textbox
-
-    return textbox
+function NeruLib:SelectTab(name)
+    for tabName, tabData in pairs(self.Tabs) do
+        local selected = tabName == name
+        tabData.Frame.Visible = selected
+        tabData.Button.BackgroundColor3 = selected and theme.primaryAccent or theme.secondaryAccent
+        tabData.Button.TextColor3 = selected and theme.background or theme.text
+    end
+    self.CurrentTab = name
 end
 
--- Create a toggle (with optional callback)
-function UILib.CreateToggle(parent, toggleName, defaultValue, position, callback)
-    local toggle = Instance.new("TextButton")
-    toggle.Name = toggleName or "Toggle"
-    toggle.Size = UDim2.new(0, 140, 0, 40)
-    toggle.Position = position or UDim2.new(0, 10, 0, 130)
-    toggle.BackgroundColor3 = defaultValue and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(70, 0, 0)
-    toggle.Text = defaultValue and "ON" or "OFF"
-    toggle.TextColor3 = Color3.fromRGB(255, 150, 150)
-    toggle.Font = Enum.Font.SourceSansBold
-    toggle.TextSize = 22
-    toggle.Parent = parent
+function NeruLib:AddButton(parent, text, callback)
+    local btn = createInstance("TextButton", {
+        Size = UDim2.new(0, 180, 0, 32),
+        BackgroundColor3 = theme.primaryAccent,
+        TextColor3 = theme.background,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 18,
+        Text = text,
+        Parent = parent,
+        AutoButtonColor = true,
+        CornerRadius = CORNER_RADIUS,
+    })
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 9)
-    corner.Parent = toggle
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
+    return btn
+end
 
-    local state = defaultValue or false
+function NeruLib:AddLabel(parent, text)
+    local lbl = createInstance("TextLabel", {
+        Size = UDim2.new(0, 180, 0, 30),
+        BackgroundTransparency = 1,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Text = text,
+        Parent = parent,
+        TextWrapped = true,
+    })
+    return lbl
+end
 
-    local function update()
+function NeruLib:AddTextbox(parent, placeholder)
+    local tb = createInstance("TextBox", {
+        Size = UDim2.new(0, 180, 0, 32),
+        BackgroundColor3 = theme.textboxBG,
+        TextColor3 = theme.text,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        PlaceholderText = placeholder or "",
+        Parent = parent,
+        ClearTextOnFocus = false,
+        CornerRadius = CORNER_RADIUS,
+    })
+    return tb
+end
+
+function NeruLib:AddToggle(parent, text, default, callback)
+    local container = createInstance("Frame", {
+        Size = UDim2.new(0, 200, 0, 36),
+        BackgroundTransparency = 1,
+        Parent = parent,
+    })
+
+    local textLabel = createInstance("TextLabel", {
+        Text = text,
+        Size = UDim2.new(0.7, 0, 1, 0),
+        TextColor3 = theme.text,
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Parent = container,
+    })
+
+    local toggleBtn = createInstance("TextButton", {
+        Size = UDim2.new(0, 50, 0, 30),
+        Position = UDim2.new(0.72, 0, 0.1, 0),
+        BackgroundColor3 = default and theme.primaryAccent or Color3.fromRGB(70,70,70),
+        Text = default and "ON" or "OFF",
+        TextColor3 = theme.background,
+        Font = Enum.Font.SourceSansBold,
+        TextSize = 18,
+        Parent = container,
+        AutoButtonColor = false,
+        CornerRadius = CORNER_RADIUS,
+    })
+
+    local state = default or false
+
+    toggleBtn.MouseButton1Click:Connect(function()
         state = not state
-        toggle.Text = state and "ON" or "OFF"
-        toggle.BackgroundColor3 = state and Color3.fromRGB(220, 0, 0) or Color3.fromRGB(70, 0, 0)
+        toggleBtn.BackgroundColor3 = state and theme.primaryAccent or Color3.fromRGB(70,70,70)
+        toggleBtn.Text = state and "ON" or "OFF"
         if callback then
             callback(state)
         end
-    end
-
-    toggle.MouseButton1Click:Connect(update)
-
-    return toggle
-end
-
--- Create a side selector (like SFII char select)
-function UILib.CreateSideSelector(parent, name, options, position, callback)
-    local frame = Instance.new("Frame")
-    frame.Name = name or "SideSelector"
-    frame.Size = UDim2.new(0, 240, 0, 50)
-    frame.Position = position or UDim2.new(0, 10, 0, 180)
-    frame.BackgroundTransparency = 1
-    frame.Parent = parent
-
-    -- Left button
-    local left = Instance.new("TextButton")
-    left.Size = UDim2.new(0, 50, 0, 50)
-    left.Position = UDim2.new(0, 0, 0, 0)
-    left.Text = "<"
-    left.Font = Enum.Font.SourceSansBold
-    left.TextSize = 30
-    left.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
-    left.TextColor3 = Color3.new(1,1,1)
-    left.Parent = frame
-
-    local leftCorner = Instance.new("UICorner", left)
-    leftCorner.CornerRadius = UDim.new(0, 9)
-
-    -- Right button
-    local right = Instance.new("TextButton")
-    right.Size = UDim2.new(0, 50, 0, 50)
-    right.Position = UDim2.new(0, 190, 0, 0)
-    right.Text = ">"
-    right.Font = Enum.Font.SourceSansBold
-    right.TextSize = 30
-    right.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
-    right.TextColor3 = Color3.new(1,1,1)
-    right.Parent = frame
-
-    local rightCorner = Instance.new("UICorner", right)
-    rightCorner.CornerRadius = UDim.new(0, 9)
-
-    -- Center label
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 140, 0, 50)
-    label.Position = UDim2.new(0, 50, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = options and options[1] or "Option"
-    label.Font = Enum.Font.SourceSansBold
-    label.TextSize = 28
-    label.TextColor3 = Color3.new(1,1,1)
-    label.Parent = frame
-
-    -- State
-    local index = 1
-    local count = #options
-
-    local function updateLabel()
-        label.Text = options[index]
-        if callback then callback(options[index], index) end
-    end
-
-    left.MouseButton1Click:Connect(function()
-        index = (index - 2) % count + 1
-        updateLabel()
     end)
 
-    right.MouseButton1Click:Connect(function()
-        index = (index % count) + 1
-        updateLabel()
-    end)
-
-    return frame, function() return options[index], index end
+    return container, function(newState)
+        if newState ~= nil then
+            state = newState
+            toggleBtn.BackgroundColor3 = state and theme.primaryAccent or Color3.fromRGB(70,70,70)
+            toggleBtn.Text = state and "ON" or "OFF"
+        end
+        return state
+    end
 end
 
--- Create baked-in Orion style side tabs integrated into window
-function UILib.CreateWindowWithSideTabs(title, tabNames)
-    local window, screenGui = UILib.CreateWindow(title)
-
-    local tabsContainer = Instance.new("Frame")
-    tabsContainer.Name = "TabsContainer"
-    tabsContainer.Size = UDim2.new(0, 110, 1, 0)
-    tabsContainer.Position = UDim2.new(0, 0, 0, 0)
-    tabsContainer.BackgroundColor3 = Color3.fromRGB(28, 4, 4)
-    tabsContainer.Parent = window
-
-    -- UIListLayout for tab spacing and alignment
-    local tabList = Instance.new("UIListLayout")
-    tabList.Padding = UDim.new(0, 8)
-    tabList.SortOrder = Enum.SortOrder.LayoutOrder
-    tabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    tabList.Parent = tabsContainer
-
-    local tabFrames = {}
-    local buttons = {}
-    local selectedTab
-
-    for i, tabName in ipairs(tabNames) do
-        local button = Instance.new("TextButton")
-        button.Name = tabName .. "TabButton"
-        button.Size = UDim2.new(1, -18, 0, 48)
-        button.BackgroundColor3 = Color3.fromRGB(50, 8, 8)
-        button.Text = tabName
-        button.TextColor3 = Color3.fromRGB(255, 180, 180)
-        button.TextSize = 18
-        button.Font = Enum.Font.SourceSansBold
-        button.LayoutOrder = i
-        button.Parent = tabsContainer
-
-        -- Rounded corners on right side
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 9)
-        corner.Parent = button
-
-        button.MouseButton1Click:Connect(function()
-            if selectedTab ~= tabName then
-                if selectedTab then
-                    buttons[selectedTab].BackgroundColor3 = Color3.fromRGB(50, 8, 8)
-                    buttons[selectedTab].TextColor3 = Color3.fromRGB(255, 180, 180)
-                    tabFrames[selectedTab].Visible = false
-                end
-                button.BackgroundColor3 = Color3.fromRGB(230, 32, 32)
-                button.TextColor3 = Color3.fromRGB(255,255,255)
-                tabFrames[tabName].Visible = true
-                selectedTab = tabName
-            end
-        end)
-
-        buttons[tabName] = button
-
-        local contentFrame = Instance.new("Frame")
-        contentFrame.Name = tabName .. "Content"
-        contentFrame.Size = UDim2.new(1, -130, 1, -28)
-        contentFrame.Position = UDim2.new(0, 120, 0, 18)
-        contentFrame.BackgroundTransparency = 1
-        contentFrame.Visible = false
-        contentFrame.Parent = window
-        tabFrames[tabName] = contentFrame
-
-        local pad = Instance.new("UIPadding")
-        pad.PaddingTop = UDim.new(0, 12)
-        pad.PaddingLeft = UDim.new(0, 18)
-        pad.PaddingRight = UDim.new(0, 18)
-        pad.Parent = contentFrame
-    end
-
-    if #tabNames > 0 then
-        buttons[tabNames[1]].BackgroundColor3 = Color3.fromRGB(230, 32, 32)
-        buttons[tabNames[1]].TextColor3 = Color3.fromRGB(255,255,255)
-        tabFrames[tabNames[1]].Visible = true
-        selectedTab = tabNames[1]
-    end
-
-    return window, screenGui, tabFrames
-end
-
-return UILib
+return NeruLib
