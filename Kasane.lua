@@ -1,6 +1,6 @@
--- UILib Module
-local UILib = {}
-UILib.__index = UILib
+-- Kasane Module
+local Kasane = {}
+Kasane.__index = Kasane
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -39,7 +39,7 @@ local function makeDraggable(frame, topbar)
 end
 
 -- 🔹 Create a new window
-function UILib:CreateWindow(titleText)
+function Kasane:CreateWindow(titleText)
     local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 
     local window = {}
@@ -108,6 +108,7 @@ function UILib:CreateWindow(titleText)
     content.ScrollBarThickness = 6
     window.content = content
 
+    -- Bottom Navbar
     local navbar = Instance.new("Frame", window.frame)
     navbar.Size = UDim2.new(1, 0, 0, 30)
     navbar.Position = UDim2.new(0, 0, 1, -30)
@@ -120,9 +121,9 @@ function UILib:CreateWindow(titleText)
         local tab = {}
         tab.buttons = {}
 
-        -- Create navbar button
+        -- Navbar button
         local tabBtn = Instance.new("TextButton", navbar)
-        tabBtn.Size = UDim2.new(1 / (#navbar:GetChildren()), 0, 1, 0) -- approximate
+        tabBtn.Size = UDim2.new(1 / (#navbar:GetChildren()), 0, 1, 0)
         tabBtn.Position = UDim2.new((#navbar:GetChildren()-1)/ (#navbar:GetChildren()),0,0,0)
         tabBtn.Text = tabName
         tabBtn.BackgroundTransparency = 1
@@ -131,10 +132,11 @@ function UILib:CreateWindow(titleText)
         tabBtn.TextSize = 14
 
         -- Container for tab content
-        local tabFrame = Instance.new("Frame")
+        local tabFrame = Instance.new("ScrollingFrame", content)
         tabFrame.Size = UDim2.new(1,0,1,0)
         tabFrame.BackgroundTransparency = 1
-        tabFrame.Parent = content
+        tabFrame.CanvasSize = UDim2.new(0,0,0,0)
+        tabFrame.ScrollBarThickness = 6
         tabFrame.Visible = false
 
         local grid = Instance.new("UIGridLayout", tabFrame)
@@ -153,20 +155,121 @@ function UILib:CreateWindow(titleText)
             tabFrame.Visible = true
         end)
 
-        -- Add button function
+        -- Add Button
         function tab:addButton(text, callback)
             local btn = Instance.new("TextButton", tabFrame)
-            btn.Size = UDim2.new(0, 120, 0, 40)
+            btn.Size = UDim2.new(0,120,0,40)
             btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
             btn.TextColor3 = Color3.fromRGB(240,240,240)
             btn.Text = text
             btn.Font = Enum.Font.SourceSans
             btn.TextSize = 16
             btn.AutoButtonColor = true
-            btn.MouseButton1Click:Connect(function()
-                if callback then callback() end
-            end)
+            btn.MouseButton1Click:Connect(callback)
             table.insert(self.buttons, btn)
+        end
+
+        -- Add Toggle
+        function tab:addToggle(text, default, callback)
+            local frame = Instance.new("Frame", tabFrame)
+            frame.Size = UDim2.new(0,120,0,40)
+            frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+            local label = Instance.new("TextLabel", frame)
+            label.Text = text
+            label.Size = UDim2.new(0.7,0,1,0)
+            label.BackgroundTransparency = 1
+            label.TextColor3 = Color3.fromRGB(240,240,240)
+            label.Font = Enum.Font.SourceSans
+            label.TextSize = 16
+            label.TextXAlignment = Enum.TextXAlignment.Left
+
+            local toggleBox = Instance.new("Frame", frame)
+            toggleBox.Size = UDim2.new(0.25,0,0.6,0)
+            toggleBox.Position = UDim2.new(0.72,0,0.2,0)
+            toggleBox.BackgroundColor3 = default and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+
+            local toggled = default
+            frame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    toggled = not toggled
+                    toggleBox.BackgroundColor3 = toggled and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+                    if callback then callback(toggled) end
+                end
+            end)
+        end
+
+        -- Add Dropdown
+        function tab:addDropdown(text, options, callback)
+            local frame = Instance.new("TextButton", tabFrame)
+            frame.Size = UDim2.new(0,120,0,40)
+            frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            frame.Text = text
+            frame.TextColor3 = Color3.fromRGB(240,240,240)
+            frame.Font = Enum.Font.SourceSans
+            frame.TextSize = 16
+            frame.AutoButtonColor = true
+
+            local open = false
+            local dropdownFrame
+            frame.MouseButton1Click:Connect(function()
+                if open then
+                    if dropdownFrame then dropdownFrame:Destroy() end
+                    open = false
+                else
+                    dropdownFrame = Instance.new("Frame", tabFrame)
+                    dropdownFrame.Size = UDim2.new(0,120,#options*30,0)
+                    dropdownFrame.Position = UDim2.new(0,frame.Position.X.Offset,0,frame.Position.Y.Offset+40)
+                    dropdownFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+                    for i,opt in ipairs(options) do
+                        local optBtn = Instance.new("TextButton", dropdownFrame)
+                        optBtn.Size = UDim2.new(1,0,0,30)
+                        optBtn.Position = UDim2.new(0,0,(i-1)/#options,0)
+                        optBtn.Text = opt
+                        optBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+                        optBtn.TextColor3 = Color3.fromRGB(240,240,240)
+                        optBtn.Font = Enum.Font.SourceSans
+                        optBtn.TextSize = 14
+                        optBtn.MouseButton1Click:Connect(function()
+                            frame.Text = text.." : "..opt
+                            if callback then callback(opt) end
+                            dropdownFrame:Destroy()
+                            open = false
+                        end)
+                    end
+                    open = true
+                end
+            end)
+        end
+
+        -- Add TextBox
+        function tab:addTextBox(text, placeholder, callback)
+            local frame = Instance.new("Frame", tabFrame)
+            frame.Size = UDim2.new(0,120,0,40)
+            frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+
+            local label = Instance.new("TextLabel", frame)
+            label.Text = text
+            label.Size = UDim2.new(1,0,0.4,0)
+            label.BackgroundTransparency = 1
+            label.TextColor3 = Color3.fromRGB(240,240,240)
+            label.Font = Enum.Font.SourceSans
+            label.TextSize = 14
+
+            local box = Instance.new("TextBox", frame)
+            box.Size = UDim2.new(1,0,0.6,0)
+            box.Position = UDim2.new(0,0,0.4,0)
+            box.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            box.TextColor3 = Color3.fromRGB(240,240,240)
+            box.PlaceholderText = placeholder or ""
+            box.Font = Enum.Font.SourceSans
+            box.TextSize = 14
+
+            box.FocusLost:Connect(function(enterPressed)
+                if enterPressed and callback then
+                    callback(box.Text)
+                end
+            end)
         end
 
         tab.frame = tabFrame
@@ -174,8 +277,8 @@ function UILib:CreateWindow(titleText)
         return tab
     end
 
-    setmetatable(window, {__index = UILib})
+    setmetatable(window, {__index = Kasane})
     return window
 end
 
-return UILib
+return Kasane
