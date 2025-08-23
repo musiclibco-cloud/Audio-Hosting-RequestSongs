@@ -1,43 +1,44 @@
+-- Load Kasane library
 local Kasane = loadstring(game:HttpGet("https://raw.githubusercontent.com/musiclibco-cloud/Audio-Hosting-RequestSongs/refs/heads/main/Kasane.lua"))()
 
-local win = Kasane:CreateWindow("Player Hub")
-local homeTab = win:addTab("Home")
+-- Create window
+local Window = Kasane:CreateWindow("Player Settings")
 
-homeTab:addButton("Set WalkSpeed 96", function()
-    local player = game:GetService("Players").LocalPlayer
-    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = 96
+-- Add "Movement" tab
+local MovementTab = Window:addTab("Movement") -- Make sure the library supports addTab like this
+
+-- Walkspeed button
+MovementTab:addButton("Set Walkspeed 96", function()
+    local plr = game.Players.LocalPlayer
+    if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+        plr.Character.Humanoid.WalkSpeed = 96
     end
 end)
 
-homeTab:addTextBox("Custom JumpPower", "Enter jump power...", function(value)
-    local jumpPower = tonumber(value)
-    if jumpPower then
-        local player = game:GetService("Players").LocalPlayer
-        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.JumpPower = jumpPower
-        end
+-- Jump Power textbox
+MovementTab:addTextbox("Jump Power", function(value)
+    local num = tonumber(value)
+    local plr = game.Players.LocalPlayer
+    if num and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+        plr.Character.Humanoid.JumpPower = num
     end
 end)
 
-homeTab:addToggle("No Gravity", false, function(state)
-    local workspace = game:GetService("Workspace")
-    for _, part in pairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") and not part.Anchored then
-            part.Anchored = state
-        end
+-- No Gravity toggle
+MovementTab:addToggle("No Gravity", function(state)
+    workspace.Gravity = state and 0 or 196.2
+end)
+
+-- Jump Power presets dropdown
+MovementTab:addDropdown("Jump Power Presets", {"50", "75", "100", "150"}, function(selection)
+    local num = tonumber(selection)
+    local plr = game.Players.LocalPlayer
+    if num and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+        plr.Character.Humanoid.JumpPower = num
     end
 end)
 
-homeTab:addDropdown("JumpPower Presets", {"50", "100", "200", "300"}, function(selected)
-    local value = tonumber(selected)
-    if value then
-        local player = game:GetService("Players").LocalPlayer
-        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.JumpPower = value
-        end
-    end
+-- Kick button (for fun Unused)
+MovementTab:addButton("Kick Me", function()
+    game.Players.LocalPlayer:Kick("You clicked the button!")
 end)
