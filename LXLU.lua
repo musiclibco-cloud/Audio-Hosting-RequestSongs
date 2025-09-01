@@ -67,7 +67,7 @@ function UI_API:CreateWindow(title, size, position)
         Name = "UI_API_ScreenGui",
         ResetOnSpawn = false,
         IgnoreGuiInset = true,
-        ScreenInsets = Enum.ScreenInsets.DeviceSafe
+        ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets
     })
 
     local canvas = createInstance("CanvasGroup", screenGui, {
