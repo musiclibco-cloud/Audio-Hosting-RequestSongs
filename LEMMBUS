@@ -1,0 +1,1047 @@
+--[[
+    FUSION UI LIBRARY
+    A modern, sleek UI library inspired by contemporary design patterns
+    Features: Glassmorphism effects, smooth animations, mobile support
+]]
+
+local Fusion = {}
+Fusion.__index = Fusion
+
+-- Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+
+-- Theme System
+local Themes = {
+    Dark = {
+        Background = Color3.fromRGB(18, 18, 25),
+        Surface = Color3.fromRGB(25, 25, 35),
+        SurfaceHover = Color3.fromRGB(30, 30, 42),
+        Accent = Color3.fromRGB(138, 89, 255),
+        AccentHover = Color3.fromRGB(158, 109, 255),
+        Text = Color3.fromRGB(245, 245, 250),
+        TextDim = Color3.fromRGB(160, 160, 175),
+        Border = Color3.fromRGB(45, 45, 60),
+        Success = Color3.fromRGB(82, 196, 26),
+        Warning = Color3.fromRGB(250, 173, 20),
+        Error = Color3.fromRGB(245, 34, 45),
+    },
+    Light = {
+        Background = Color3.fromRGB(245, 247, 250),
+        Surface = Color3.fromRGB(255, 255, 255),
+        SurfaceHover = Color3.fromRGB(250, 250, 252),
+        Accent = Color3.fromRGB(99, 102, 241),
+        AccentHover = Color3.fromRGB(79, 82, 221),
+        Text = Color3.fromRGB(25, 25, 35),
+        TextDim = Color3.fromRGB(100, 100, 120),
+        Border = Color3.fromRGB(220, 222, 230),
+        Success = Color3.fromRGB(34, 197, 94),
+        Warning = Color3.fromRGB(251, 146, 60),
+        Error = Color3.fromRGB(239, 68, 68),
+    }
+}
+
+-- Utility Functions
+local function Tween(obj, info, props)
+    return TweenService:Create(obj, info, props)
+end
+
+local function CreateElement(class, props)
+    local el = Instance.new(class)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then el[k] = v end
+    end
+    el.Parent = props.Parent
+    return el
+end
+
+local function AddCorner(parent, radius)
+    return CreateElement("UICorner", {CornerRadius = UDim.new(0, radius or 8), Parent = parent})
+end
+
+local function AddStroke(parent, color, thickness)
+    return CreateElement("UIStroke", {
+        Color = color or Themes.Dark.Border,
+        Thickness = thickness or 1,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Parent = parent
+    })
+end
+
+local function AddPadding(parent, all)
+    return CreateElement("UIPadding", {
+        PaddingTop = UDim.new(0, all),
+        PaddingBottom = UDim.new(0, all),
+        PaddingLeft = UDim.new(0, all),
+        PaddingRight = UDim.new(0, all),
+        Parent = parent
+    })
+end
+
+-- Main Window Creation
+function Fusion.new(config)
+    local self = setmetatable({}, Fusion)
+    
+    config = config or {}
+    self.Name = config.Name or "Fusion UI"
+    self.Theme = Themes[config.Theme or "Dark"]
+    self.Size = config.Size or UDim2.new(0, 550, 0, 650)
+    self.Tabs = {}
+    self.ActiveTab = nil
+    self.Flags = {}
+    
+    -- Create ScreenGui
+    self.Gui = CreateElement("ScreenGui", {
+        Name = "Fusion_" .. HttpService:GenerateGUID(false),
+        ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        Parent = game:GetService("CoreGui")
+    })
+    
+    -- Main Container
+    self.Main = CreateElement("Frame", {
+        Name = "Main",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = self.Size,
+        BackgroundColor3 = self.Theme.Background,
+        BorderSizePixel = 0,
+        Parent = self.Gui
+    })
+    AddCorner(self.Main, 12)
+    
+    -- Shadow
+    local shadow = CreateElement("ImageLabel", {
+        Name = "Shadow",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 40, 1, 40),
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://5554236805",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.5,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(23, 23, 277, 277),
+        ZIndex = 0,
+        Parent = self.Main
+    })
+    
+    self:CreateTopbar()
+    self:CreateSidebar()
+    self:CreateContent()
+    self:MakeDraggable()
+    
+    return self
+end
+
+function Fusion:CreateTopbar()
+    self.Topbar = CreateElement("Frame", {
+        Name = "Topbar",
+        Size = UDim2.new(1, 0, 0, 50),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = self.Main
+    })
+    AddCorner(self.Topbar, 12)
+    
+    -- Cosmetic fix for rounded corners
+    local fix = CreateElement("Frame", {
+        Position = UDim2.new(0, 0, 1, -12),
+        Size = UDim2.new(1, 0, 0, 12),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = self.Topbar
+    })
+    
+    -- Title
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 20, 0, 0),
+        Size = UDim2.new(0, 200, 1, 0),
+        BackgroundTransparency = 1,
+        Text = self.Name,
+        TextColor3 = self.Theme.Text,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamBold,
+        Parent = self.Topbar
+    })
+    
+    -- Close Button
+    local closeBtn = CreateElement("TextButton", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -15, 0.5, 0),
+        Size = UDim2.new(0, 30, 0, 30),
+        BackgroundColor3 = self.Theme.Error,
+        Text = "✕",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        BorderSizePixel = 0,
+        Parent = self.Topbar
+    })
+    AddCorner(closeBtn, 8)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        Tween(self.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        task.wait(0.3)
+        self.Gui:Destroy()
+    end)
+    
+    -- Hover effect
+    closeBtn.MouseEnter:Connect(function()
+        Tween(closeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 80, 80)}):Play()
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        Tween(closeBtn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Error}):Play()
+    end)
+end
+
+function Fusion:CreateSidebar()
+    self.Sidebar = CreateElement("Frame", {
+        Name = "Sidebar",
+        Position = UDim2.new(0, 0, 0, 50),
+        Size = UDim2.new(0, 160, 1, -50),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = self.Main
+    })
+    
+    local list = CreateElement("UIListLayout", {
+        Padding = UDim.new(0, 6),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = self.Sidebar
+    })
+    
+    AddPadding(self.Sidebar, 10)
+end
+
+function Fusion:CreateContent()
+    self.Content = CreateElement("Frame", {
+        Name = "Content",
+        Position = UDim2.new(0, 160, 0, 50),
+        Size = UDim2.new(1, -160, 1, -50),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Parent = self.Main
+    })
+end
+
+function Fusion:MakeDraggable()
+    local dragging, dragInput, dragStart, startPos
+    
+    self.Topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.Main.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    self.Topbar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            self.Main.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- Tab System
+function Fusion:AddTab(name, icon)
+    local tab = {
+        Name = name,
+        Elements = {}
+    }
+    
+    -- Tab Button
+    local btn = CreateElement("TextButton", {
+        Name = name,
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Text = "",
+        Parent = self.Sidebar
+    })
+    AddCorner(btn, 8)
+    
+    local label = CreateElement("TextLabel", {
+        Size = UDim2.new(1, -10, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = btn
+    })
+    
+    -- Tab Container
+    local container = CreateElement("ScrollingFrame", {
+        Name = name .. "_Container",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = self.Theme.Accent,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        Visible = false,
+        Parent = self.Content
+    })
+    
+    local list = CreateElement("UIListLayout", {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = container
+    })
+    
+    AddPadding(container, 15)
+    
+    list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        container.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 30)
+    end)
+    
+    btn.MouseButton1Click:Connect(function()
+        self:SelectTab(name)
+    end)
+    
+    btn.MouseEnter:Connect(function()
+        if self.ActiveTab ~= name then
+            Tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.SurfaceHover}):Play()
+        end
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        if self.ActiveTab ~= name then
+            Tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Surface}):Play()
+        end
+    end)
+    
+    tab.Button = btn
+    tab.Label = label
+    tab.Container = container
+    self.Tabs[name] = tab
+    
+    if not self.ActiveTab then
+        self:SelectTab(name)
+    end
+    
+    return tab
+end
+
+function Fusion:SelectTab(name)
+    for tabName, tab in pairs(self.Tabs) do
+        tab.Container.Visible = (tabName == name)
+        
+        if tabName == name then
+            tab.Button.BackgroundColor3 = self.Theme.Accent
+            tab.Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+            tab.Label.Font = Enum.Font.GothamBold
+        else
+            tab.Button.BackgroundColor3 = self.Theme.Surface
+            tab.Label.TextColor3 = self.Theme.TextDim
+            tab.Label.Font = Enum.Font.Gotham
+        end
+    end
+    self.ActiveTab = name
+end
+
+-- UI Elements
+function Fusion:AddButton(tab, text, callback)
+    local container = self.Tabs[tab].Container
+    
+    local btn = CreateElement("TextButton", {
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = self.Theme.Accent,
+        Text = "",
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(btn, 8)
+    
+    CreateElement("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 14,
+        Font = Enum.Font.GothamMedium,
+        Parent = btn
+    })
+    
+    btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+    
+    btn.MouseEnter:Connect(function()
+        Tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.AccentHover}):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        Tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Accent}):Play()
+    end)
+    
+    return btn
+end
+
+function Fusion:AddToggle(tab, text, default, callback)
+    local container = self.Tabs[tab].Container
+    local state = default or false
+    
+    local frame = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 45),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(frame, 8)
+    AddStroke(frame, self.Theme.Border)
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(1, -80, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local toggle = CreateElement("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -15, 0.5, 0),
+        Size = UDim2.new(0, 48, 0, 28),
+        BackgroundColor3 = state and self.Theme.Accent or self.Theme.Border,
+        BorderSizePixel = 0,
+        Parent = frame
+    })
+    AddCorner(toggle, 14)
+    
+    local circle = CreateElement("Frame", {
+        Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 4, 0.5, -10),
+        Size = UDim2.new(0, 20, 0, 20),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Parent = toggle
+    })
+    AddCorner(circle, 10)
+    
+    local btn = CreateElement("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        Parent = frame
+    })
+    
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        
+        Tween(toggle, TweenInfo.new(0.2), {
+            BackgroundColor3 = state and self.Theme.Accent or self.Theme.Border
+        }):Play()
+        
+        Tween(circle, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 4, 0.5, -10)
+        }):Play()
+        
+        if callback then callback(state) end
+    end)
+    
+    return frame
+end
+
+function Fusion:AddSlider(tab, text, min, max, default, callback)
+    local container = self.Tabs[tab].Container
+    local value = default or min
+    
+    local frame = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(frame, 8)
+    AddStroke(frame, self.Theme.Border)
+    
+    local label = CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 8),
+        Size = UDim2.new(1, -30, 0, 20),
+        BackgroundTransparency = 1,
+        Text = text .. ": " .. tostring(value),
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local track = CreateElement("Frame", {
+        Position = UDim2.new(0, 15, 0, 38),
+        Size = UDim2.new(1, -30, 0, 6),
+        BackgroundColor3 = self.Theme.Border,
+        BorderSizePixel = 0,
+        Parent = frame
+    })
+    AddCorner(track, 3)
+    
+    local fill = CreateElement("Frame", {
+        Size = UDim2.new((value - min) / (max - min), 0, 1, 0),
+        BackgroundColor3 = self.Theme.Accent,
+        BorderSizePixel = 0,
+        Parent = track
+    })
+    AddCorner(fill, 3)
+    
+    local dragging = false
+    
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local pos = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+            value = math.floor(min + (max - min) * pos)
+            
+            fill.Size = UDim2.new(pos, 0, 1, 0)
+            label.Text = text .. ": " .. tostring(value)
+            
+            if callback then callback(value) end
+        end
+    end)
+    
+    return frame
+end
+
+function Fusion:AddInput(tab, text, placeholder, callback)
+    local container = self.Tabs[tab].Container
+    
+    local frame = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 70),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(frame, 8)
+    AddStroke(frame, self.Theme.Border)
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 8),
+        Size = UDim2.new(1, -30, 0, 20),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local input = CreateElement("TextBox", {
+        Position = UDim2.new(0, 15, 0, 35),
+        Size = UDim2.new(1, -30, 0, 28),
+        BackgroundColor3 = self.Theme.Background,
+        BorderSizePixel = 0,
+        Text = "",
+        PlaceholderText = placeholder or "Enter text...",
+        TextColor3 = self.Theme.Text,
+        PlaceholderColor3 = self.Theme.TextDim,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        ClearTextOnFocus = false,
+        Parent = frame
+    })
+    AddCorner(input, 6)
+    AddPadding(input, 8)
+    
+    if callback then
+        input.FocusLost:Connect(function(enter)
+            callback(input.Text, enter)
+        end)
+    end
+    
+    return frame, input
+end
+
+function Fusion:AddDropdown(tab, text, options, default, callback)
+    local container = self.Tabs[tab].Container
+    local selected = default or (options[1] or "None")
+    local open = false
+    
+    local frame = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 45),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(frame, 8)
+    AddStroke(frame, self.Theme.Border)
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(0.5, -20, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local btn = CreateElement("TextButton", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -15, 0.5, 0),
+        Size = UDim2.new(0.45, 0, 0, 32),
+        BackgroundColor3 = self.Theme.Background,
+        Text = "",
+        BorderSizePixel = 0,
+        Parent = frame
+    })
+    AddCorner(btn, 6)
+    
+    local btnLabel = CreateElement("TextLabel", {
+        Size = UDim2.new(1, -20, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = selected,
+        TextColor3 = self.Theme.Text,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = btn
+    })
+    
+    local arrow = CreateElement("TextLabel", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -8, 0.5, 0),
+        Size = UDim2.new(0, 16, 0, 16),
+        BackgroundTransparency = 1,
+        Text = "▼",
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        Parent = btn
+    })
+    
+    local dropdown = CreateElement("Frame", {
+        Position = UDim2.new(0.5, 0, 1, 8),
+        Size = UDim2.new(0.45, 0, 0, math.min(#options * 35, 200)),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Visible = false,
+        ZIndex = 10,
+        Parent = frame
+    })
+    AddCorner(dropdown, 8)
+    AddStroke(dropdown, self.Theme.Border)
+    
+    local scroll = CreateElement("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = self.Theme.Accent,
+        CanvasSize = UDim2.new(0, 0, 0, #options * 35),
+        ZIndex = 10,
+        Parent = dropdown
+    })
+    
+    local list = CreateElement("UIListLayout", {
+        Padding = UDim.new(0, 2),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = scroll
+    })
+    
+    AddPadding(scroll, 4)
+    
+    for _, option in ipairs(options) do
+        local optBtn = CreateElement("TextButton", {
+            Size = UDim2.new(1, 0, 0, 32),
+            BackgroundColor3 = self.Theme.Background,
+            Text = "",
+            BorderSizePixel = 0,
+            ZIndex = 11,
+            Parent = scroll
+        })
+        AddCorner(optBtn, 6)
+        
+        CreateElement("TextLabel", {
+            Size = UDim2.new(1, -10, 1, 0),
+            Position = UDim2.new(0, 10, 0, 0),
+            BackgroundTransparency = 1,
+            Text = option,
+            TextColor3 = self.Theme.Text,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            ZIndex = 11,
+            Parent = optBtn
+        })
+        
+        optBtn.MouseButton1Click:Connect(function()
+            selected = option
+            btnLabel.Text = selected
+            dropdown.Visible = false
+            open = false
+            arrow.Rotation = 0
+            if callback then callback(option) end
+        end)
+        
+        optBtn.MouseEnter:Connect(function()
+            Tween(optBtn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.SurfaceHover}):Play()
+        end)
+        
+        optBtn.MouseLeave:Connect(function()
+            Tween(optBtn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Background}):Play()
+        end)
+    end
+    
+    btn.MouseButton1Click:Connect(function()
+        open = not open
+        dropdown.Visible = open
+        Tween(arrow, TweenInfo.new(0.2), {Rotation = open and 180 or 0}):Play()
+    end)
+    
+    return frame
+end
+
+function Fusion:AddLabel(tab, text)
+    local container = self.Tabs[tab].Container
+    
+    local label = CreateElement("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = container
+    })
+    
+    return label
+end
+
+function Fusion:AddSection(tab, text)
+    local container = self.Tabs[tab].Container
+    
+    local section = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundTransparency = 1,
+        Parent = container
+    })
+    
+    CreateElement("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamBold,
+        Parent = section
+    })
+    
+    local line = CreateElement("Frame", {
+        Position = UDim2.new(0, 0, 1, -2),
+        Size = UDim2.new(1, 0, 0, 2),
+        BackgroundColor3 = self.Theme.Border,
+        BorderSizePixel = 0,
+        Parent = section
+    })
+    AddCorner(line, 1)
+    
+    return section
+end
+
+function Fusion:AddKeybind(tab, text, default, callback)
+    local container = self.Tabs[tab].Container
+    local currentKey = default or Enum.KeyCode.E
+    local listening = false
+    
+    local frame = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 45),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(frame, 8)
+    AddStroke(frame, self.Theme.Border)
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(0.6, -20, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local btn = CreateElement("TextButton", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -15, 0.5, 0),
+        Size = UDim2.new(0.35, 0, 0, 32),
+        BackgroundColor3 = self.Theme.Accent,
+        Text = "",
+        BorderSizePixel = 0,
+        Parent = frame
+    })
+    AddCorner(btn, 6)
+    
+    local btnLabel = CreateElement("TextLabel", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = currentKey.Name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextSize = 12,
+        Font = Enum.Font.GothamMedium,
+        Parent = btn
+    })
+    
+    btn.MouseButton1Click:Connect(function()
+        listening = true
+        btnLabel.Text = "..."
+        Tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Warning}):Play()
+    end)
+    
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+            currentKey = input.KeyCode
+            btnLabel.Text = currentKey.Name
+            listening = false
+            Tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = self.Theme.Accent}):Play()
+            if callback then callback(currentKey) end
+        end
+    end)
+    
+    return frame
+end
+
+function Fusion:AddColorPicker(tab, text, default, callback)
+    local container = self.Tabs[tab].Container
+    local currentColor = default or Color3.fromRGB(255, 255, 255)
+    
+    local frame = CreateElement("Frame", {
+        Size = UDim2.new(1, 0, 0, 45),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = container
+    })
+    AddCorner(frame, 8)
+    AddStroke(frame, self.Theme.Border)
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 0),
+        Size = UDim2.new(1, -80, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local colorDisplay = CreateElement("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -15, 0.5, 0),
+        Size = UDim2.new(0, 50, 0, 30),
+        BackgroundColor3 = currentColor,
+        BorderSizePixel = 0,
+        Parent = frame
+    })
+    AddCorner(colorDisplay, 6)
+    AddStroke(colorDisplay, self.Theme.Border)
+    
+    local btn = CreateElement("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        Parent = colorDisplay
+    })
+    
+    local presetColors = {
+        Color3.fromRGB(255, 77, 77), Color3.fromRGB(255, 145, 77),
+        Color3.fromRGB(255, 213, 77), Color3.fromRGB(184, 233, 134),
+        Color3.fromRGB(134, 233, 184), Color3.fromRGB(134, 200, 233),
+        Color3.fromRGB(134, 150, 233), Color3.fromRGB(184, 134, 233),
+        Color3.fromRGB(233, 134, 200), Color3.fromRGB(255, 255, 255),
+    }
+    
+    local colorIndex = 1
+    btn.MouseButton1Click:Connect(function()
+        colorIndex = (colorIndex % #presetColors) + 1
+        currentColor = presetColors[colorIndex]
+        colorDisplay.BackgroundColor3 = currentColor
+        if callback then callback(currentColor) end
+    end)
+    
+    return frame
+end
+
+-- Notification System
+function Fusion:Notify(config)
+    config = config or {}
+    local title = config.Title or "Notification"
+    local message = config.Message or ""
+    local duration = config.Duration or 3
+    local notifType = config.Type or "Info"
+    
+    local typeColors = {
+        Info = self.Theme.Accent,
+        Success = self.Theme.Success,
+        Warning = self.Theme.Warning,
+        Error = self.Theme.Error
+    }
+    
+    local color = typeColors[notifType] or self.Theme.Accent
+    
+    local notif = CreateElement("Frame", {
+        Size = UDim2.new(0, 300, 0, 80),
+        Position = UDim2.new(1, -320, 1, 20),
+        BackgroundColor3 = self.Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = self.Gui
+    })
+    AddCorner(notif, 10)
+    AddStroke(notif, color, 2)
+    
+    local indicator = CreateElement("Frame", {
+        Size = UDim2.new(0, 4, 1, 0),
+        BackgroundColor3 = color,
+        BorderSizePixel = 0,
+        Parent = notif
+    })
+    AddCorner(indicator, 2)
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 8),
+        Size = UDim2.new(1, -30, 0, 20),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = self.Theme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamBold,
+        Parent = notif
+    })
+    
+    CreateElement("TextLabel", {
+        Position = UDim2.new(0, 15, 0, 32),
+        Size = UDim2.new(1, -30, 0, 40),
+        BackgroundTransparency = 1,
+        Text = message,
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        Font = Enum.Font.Gotham,
+        TextWrapped = true,
+        Parent = notif
+    })
+    
+    -- Slide in animation
+    Tween(notif, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -320, 1, -100)
+    }):Play()
+    
+    -- Auto dismiss
+    task.delay(duration, function()
+        Tween(notif, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, -320, 1, 20)
+        }):Play()
+        task.wait(0.3)
+        notif:Destroy()
+    end)
+end
+
+-- Configuration Save/Load
+function Fusion:SaveConfig(name)
+    if not writefile then
+        warn("Executor does not support writefile")
+        return
+    end
+    
+    local config = {}
+    for flag, value in pairs(self.Flags) do
+        config[flag] = value
+    end
+    
+    local success, err = pcall(function()
+        if not isfolder("Fusion") then
+            makefolder("Fusion")
+        end
+        writefile("Fusion/" .. name .. ".json", HttpService:JSONEncode(config))
+    end)
+    
+    if success then
+        self:Notify({Title = "Config Saved", Message = "Configuration saved successfully", Type = "Success"})
+    else
+        self:Notify({Title = "Error", Message = "Failed to save config: " .. tostring(err), Type = "Error"})
+    end
+end
+
+function Fusion:LoadConfig(name)
+    if not readfile then
+        warn("Executor does not support readfile")
+        return
+    end
+    
+    local success, result = pcall(function()
+        return readfile("Fusion/" .. name .. ".json")
+    end)
+    
+    if success then
+        local config = HttpService:JSONDecode(result)
+        for flag, value in pairs(config) do
+            if self.Flags[flag] then
+                self.Flags[flag] = value
+            end
+        end
+        self:Notify({Title = "Config Loaded", Message = "Configuration loaded successfully", Type = "Success"})
+    else
+        self:Notify({Title = "Error", Message = "Failed to load config", Type = "Error"})
+    end
+end
+
+-- Destroy
+function Fusion:Destroy()
+    Tween(self.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0)
+    }):Play()
+    task.wait(0.3)
+    self.Gui:Destroy()
+end
+
+return Fusion
