@@ -87,10 +87,21 @@ function Fusion.new(config)
     config = config or {}
     self.Name = config.Name or "Fusion UI"
     self.Theme = Themes[config.Theme or "Dark"]
-    self.Size = config.Size or UDim2.new(0, 550, 0, 650)
+    
+    -- Detect mobile
+    local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+    
+    -- Auto-adjust size for mobile
+    if isMobile then
+        self.Size = config.Size or UDim2.new(0, 380, 0, 520)
+    else
+        self.Size = config.Size or UDim2.new(0, 550, 0, 650)
+    end
+    
     self.Tabs = {}
     self.ActiveTab = nil
     self.Flags = {}
+    self.IsMobile = isMobile
     
     -- Create ScreenGui
     self.Gui = CreateElement("ScreenGui", {
@@ -110,7 +121,7 @@ function Fusion.new(config)
         BorderSizePixel = 0,
         Parent = self.Gui
     })
-    AddCorner(self.Main, 12)
+    AddCorner(self.Main, isMobile and 10 or 12)
     
     -- Shadow
     local shadow = CreateElement("ImageLabel", {
@@ -137,14 +148,16 @@ function Fusion.new(config)
 end
 
 function Fusion:CreateTopbar()
+    local topbarHeight = self.IsMobile and 45 or 50
+    
     self.Topbar = CreateElement("Frame", {
         Name = "Topbar",
-        Size = UDim2.new(1, 0, 0, 50),
+        Size = UDim2.new(1, 0, 0, topbarHeight),
         BackgroundColor3 = self.Theme.Surface,
         BorderSizePixel = 0,
         Parent = self.Main
     })
-    AddCorner(self.Topbar, 12)
+    AddCorner(self.Topbar, self.IsMobile and 10 or 12)
     
     -- Cosmetic fix for rounded corners
     local fix = CreateElement("Frame", {
@@ -155,33 +168,47 @@ function Fusion:CreateTopbar()
         Parent = self.Topbar
     })
     
+    -- Drag indicator for mobile
+    if self.IsMobile then
+        local dragIndicator = CreateElement("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0),
+            Position = UDim2.new(0.5, 0, 0, 8),
+            Size = UDim2.new(0, 40, 0, 4),
+            BackgroundColor3 = self.Theme.TextDim,
+            BorderSizePixel = 0,
+            Parent = self.Topbar
+        })
+        AddCorner(dragIndicator, 2)
+    end
+    
     -- Title
     CreateElement("TextLabel", {
-        Position = UDim2.new(0, 20, 0, 0),
+        Position = UDim2.new(0, self.IsMobile and 12 or 20, 0, 0),
         Size = UDim2.new(0, 200, 1, 0),
         BackgroundTransparency = 1,
         Text = self.Name,
         TextColor3 = self.Theme.Text,
-        TextSize = 18,
+        TextSize = self.IsMobile and 15 or 18,
         TextXAlignment = Enum.TextXAlignment.Left,
         Font = Enum.Font.GothamBold,
         Parent = self.Topbar
     })
     
     -- Close Button
+    local btnSize = self.IsMobile and 28 or 30
     local closeBtn = CreateElement("TextButton", {
         AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -15, 0.5, 0),
-        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, self.IsMobile and -10 or -15, 0.5, 0),
+        Size = UDim2.new(0, btnSize, 0, btnSize),
         BackgroundColor3 = self.Theme.Error,
         Text = "✕",
         TextColor3 = Color3.fromRGB(255, 255, 255),
-        TextSize = 16,
+        TextSize = self.IsMobile and 14 or 16,
         Font = Enum.Font.GothamBold,
         BorderSizePixel = 0,
         Parent = self.Topbar
     })
-    AddCorner(closeBtn, 8)
+    AddCorner(closeBtn, self.IsMobile and 6 or 8)
     
     closeBtn.MouseButton1Click:Connect(function()
         Tween(self.Main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
@@ -199,29 +226,35 @@ function Fusion:CreateTopbar()
 end
 
 function Fusion:CreateSidebar()
+    local topbarHeight = self.IsMobile and 45 or 50
+    local sidebarWidth = self.IsMobile and 130 or 160
+    
     self.Sidebar = CreateElement("Frame", {
         Name = "Sidebar",
-        Position = UDim2.new(0, 0, 0, 50),
-        Size = UDim2.new(0, 160, 1, -50),
+        Position = UDim2.new(0, 0, 0, topbarHeight),
+        Size = UDim2.new(0, sidebarWidth, 1, -topbarHeight),
         BackgroundColor3 = self.Theme.Surface,
         BorderSizePixel = 0,
         Parent = self.Main
     })
     
     local list = CreateElement("UIListLayout", {
-        Padding = UDim.new(0, 6),
+        Padding = UDim.new(0, self.IsMobile and 4 or 6),
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = self.Sidebar
     })
     
-    AddPadding(self.Sidebar, 10)
+    AddPadding(self.Sidebar, self.IsMobile and 8 or 10)
 end
 
 function Fusion:CreateContent()
+    local topbarHeight = self.IsMobile and 45 or 50
+    local sidebarWidth = self.IsMobile and 130 or 160
+    
     self.Content = CreateElement("Frame", {
         Name = "Content",
-        Position = UDim2.new(0, 160, 0, 50),
-        Size = UDim2.new(1, -160, 1, -50),
+        Position = UDim2.new(0, sidebarWidth, 0, topbarHeight),
+        Size = UDim2.new(1, -sidebarWidth, 1, -topbarHeight),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Parent = self.Main
@@ -230,6 +263,16 @@ end
 
 function Fusion:MakeDraggable()
     local dragging, dragInput, dragStart, startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        Tween(self.Main, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+            Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        }):Play()
+    end
     
     self.Topbar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -253,11 +296,7 @@ function Fusion:MakeDraggable()
     
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            self.Main.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+            update(input)
         end
     end)
 end
@@ -269,16 +308,18 @@ function Fusion:AddTab(name, icon)
         Elements = {}
     }
     
+    local tabHeight = self.IsMobile and 36 or 40
+    
     -- Tab Button
     local btn = CreateElement("TextButton", {
         Name = name,
-        Size = UDim2.new(1, 0, 0, 40),
+        Size = UDim2.new(1, 0, 0, tabHeight),
         BackgroundColor3 = self.Theme.Surface,
         BorderSizePixel = 0,
         Text = "",
         Parent = self.Sidebar
     })
-    AddCorner(btn, 8)
+    AddCorner(btn, self.IsMobile and 6 or 8)
     
     local label = CreateElement("TextLabel", {
         Size = UDim2.new(1, -10, 1, 0),
@@ -286,7 +327,7 @@ function Fusion:AddTab(name, icon)
         BackgroundTransparency = 1,
         Text = name,
         TextColor3 = self.Theme.TextDim,
-        TextSize = 14,
+        TextSize = self.IsMobile and 12 or 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         Font = Enum.Font.Gotham,
         Parent = btn
@@ -298,7 +339,7 @@ function Fusion:AddTab(name, icon)
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
-        ScrollBarThickness = 4,
+        ScrollBarThickness = self.IsMobile and 3 or 4,
         ScrollBarImageColor3 = self.Theme.Accent,
         CanvasSize = UDim2.new(0, 0, 0, 0),
         Visible = false,
@@ -306,15 +347,15 @@ function Fusion:AddTab(name, icon)
     })
     
     local list = CreateElement("UIListLayout", {
-        Padding = UDim.new(0, 8),
+        Padding = UDim.new(0, self.IsMobile and 6 or 8),
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = container
     })
     
-    AddPadding(container, 15)
+    AddPadding(container, self.IsMobile and 10 or 15)
     
     list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        container.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 30)
+        container.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + (self.IsMobile and 20 or 30))
     end)
     
     btn.MouseButton1Click:Connect(function()
@@ -365,22 +406,23 @@ end
 -- UI Elements
 function Fusion:AddButton(tab, text, callback)
     local container = self.Tabs[tab].Container
+    local btnHeight = self.IsMobile and 36 or 40
     
     local btn = CreateElement("TextButton", {
-        Size = UDim2.new(1, 0, 0, 40),
+        Size = UDim2.new(1, 0, 0, btnHeight),
         BackgroundColor3 = self.Theme.Accent,
         Text = "",
         BorderSizePixel = 0,
         Parent = container
     })
-    AddCorner(btn, 8)
+    AddCorner(btn, self.IsMobile and 6 or 8)
     
     CreateElement("TextLabel", {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Text = text,
         TextColor3 = Color3.fromRGB(255, 255, 255),
-        TextSize = 14,
+        TextSize = self.IsMobile and 12 or 14,
         Font = Enum.Font.GothamMedium,
         Parent = btn
     })
@@ -403,25 +445,75 @@ end
 function Fusion:AddToggle(tab, text, default, callback)
     local container = self.Tabs[tab].Container
     local state = default or false
+    local frameHeight = self.IsMobile and 40 or 45
     
     local frame = CreateElement("Frame", {
-        Size = UDim2.new(1, 0, 0, 45),
+        Size = UDim2.new(1, 0, 0, frameHeight),
         BackgroundColor3 = self.Theme.Surface,
         BorderSizePixel = 0,
         Parent = container
     })
-    AddCorner(frame, 8)
+    AddCorner(frame, self.IsMobile and 6 or 8)
     AddStroke(frame, self.Theme.Border)
     
     CreateElement("TextLabel", {
-        Position = UDim2.new(0, 15, 0, 0),
-        Size = UDim2.new(1, -80, 1, 0),
+        Position = UDim2.new(0, self.IsMobile and 10 or 15, 0, 0),
+        Size = UDim2.new(1, self.IsMobile and -65 or -80, 1, 0),
         BackgroundTransparency = 1,
         Text = text,
         TextColor3 = self.Theme.Text,
-        TextSize = 14,
+        TextSize = self.IsMobile and 12 or 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         Font = Enum.Font.Gotham,
+        Parent = frame
+    })
+    
+    local toggleWidth = self.IsMobile and 42 or 48
+    local toggleHeight = self.IsMobile and 24 or 28
+    
+    local toggle = CreateElement("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, self.IsMobile and -10 or -15, 0.5, 0),
+        Size = UDim2.new(0, toggleWidth, 0, toggleHeight),
+        BackgroundColor3 = state and self.Theme.Accent or self.Theme.Border,
+        BorderSizePixel = 0,
+        Parent = frame
+    })
+    AddCorner(toggle, toggleHeight / 2)
+    
+    local circleSize = self.IsMobile and 18 or 20
+    local circle = CreateElement("Frame", {
+        Position = state and UDim2.new(1, -(circleSize + 2), 0.5, -circleSize/2) or UDim2.new(0, 2, 0.5, -circleSize/2),
+        Size = UDim2.new(0, circleSize, 0, circleSize),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Parent = toggle
+    })
+    AddCorner(circle, circleSize / 2)
+    
+    local btn = CreateElement("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        Parent = frame
+    })
+    
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        
+        Tween(toggle, TweenInfo.new(0.2), {
+            BackgroundColor3 = state and self.Theme.Accent or self.Theme.Border
+        }):Play()
+        
+        Tween(circle, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            Position = state and UDim2.new(1, -(circleSize + 2), 0.5, -circleSize/2) or UDim2.new(0, 2, 0.5, -circleSize/2)
+        }):Play()
+        
+        if callback then callback(state) end
+    end)
+    
+    return frame
+end
         Parent = frame
     })
     
