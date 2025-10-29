@@ -1,6 +1,6 @@
 --[[
     VoidMobile UI Library - Compact Edition
-    Optimized for mobile screens (720x1640 portrait)
+    Optimized for mobile screens (square-ish design)
     Purple-black theme with smooth animations
 ]]--
 
@@ -62,11 +62,11 @@ function VoidMobile:CreateWindow(config)
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.Parent = CoreGui
     
-    -- Main Frame (Compact size for mobile)
+    -- Main Frame (Square-ish design)
     local Main = Instance.new("Frame")
     Main.Name = "Main"
-    Main.Size = UDim2.fromOffset(340, 480)
-    Main.Position = UDim2.new(0.5, -170, 0.5, -240)
+    Main.Size = UDim2.fromOffset(380, 420)
+    Main.Position = UDim2.new(0.5, -190, 0.5, -210)
     Main.BackgroundColor3 = Color3.fromRGB(15, 10, 20)
     Main.BorderSizePixel = 0
     Main.Active = true
@@ -98,7 +98,7 @@ function VoidMobile:CreateWindow(config)
     -- Title Bar
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
-    TitleBar.Size = UDim2.new(1, 0, 0, 38)
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
     TitleBar.BackgroundColor3 = Color3.fromRGB(25, 15, 35)
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = Main
@@ -117,7 +117,7 @@ function VoidMobile:CreateWindow(config)
     
     local Title = Instance.new("TextLabel")
     Title.Name = "Title"
-    Title.Size = UDim2.new(1, -80, 1, 0)
+    Title.Size = UDim2.new(1, -90, 1, 0)
     Title.Position = UDim2.fromOffset(12, 0)
     Title.BackgroundTransparency = 1
     Title.Text = name
@@ -130,12 +130,12 @@ function VoidMobile:CreateWindow(config)
     -- Close Button
     local Close = Instance.new("TextButton")
     Close.Name = "Close"
-    Close.Size = UDim2.fromOffset(30, 30)
-    Close.Position = UDim2.new(1, -38, 0, 4)
+    Close.Size = UDim2.fromOffset(32, 32)
+    Close.Position = UDim2.new(1, -40, 0, 4)
     Close.BackgroundColor3 = Color3.fromRGB(180, 50, 80)
     Close.Text = "✕"
     Close.Font = Enum.Font.GothamBold
-    Close.TextSize = 16
+    Close.TextSize = 18
     Close.TextColor3 = Color3.white
     Close.AutoButtonColor = false
     Close.Parent = TitleBar
@@ -147,11 +147,19 @@ function VoidMobile:CreateWindow(config)
         ScreenGui:Destroy()
     end)
     
+    Close.MouseEnter:Connect(function()
+        Tween(Close, {BackgroundColor3 = Color3.fromRGB(220, 60, 100)}, 0.2)
+    end)
+    
+    Close.MouseLeave:Connect(function()
+        Tween(Close, {BackgroundColor3 = Color3.fromRGB(180, 50, 80)}, 0.2)
+    end)
+    
     -- Minimize Button
     local Minimize = Instance.new("TextButton")
     Minimize.Name = "Minimize"
-    Minimize.Size = UDim2.fromOffset(30, 30)
-    Minimize.Position = UDim2.new(1, -72, 0, 4)
+    Minimize.Size = UDim2.fromOffset(32, 32)
+    Minimize.Position = UDim2.new(1, -76, 0, 4)
     Minimize.BackgroundColor3 = color
     Minimize.Text = "−"
     Minimize.Font = Enum.Font.GothamBold
@@ -161,19 +169,120 @@ function VoidMobile:CreateWindow(config)
     Minimize.Parent = TitleBar
     Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0, 8)
     
-    local minimized = false
-    Minimize.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        if minimized then
-            Tween(Main, {Size = UDim2.new(0, 340, 0, 38)}, 0.25)
-            Minimize.Text = "+"
-        else
-            Tween(Main, {Size = UDim2.fromOffset(340, 480)}, 0.25)
-            Minimize.Text = "−"
+    Minimize.MouseEnter:Connect(function()
+        Tween(Minimize, {BackgroundColor3 = Color3.fromRGB(140, 70, 200)}, 0.2)
+    end)
+    
+    Minimize.MouseLeave:Connect(function()
+        Tween(Minimize, {BackgroundColor3 = color}, 0.2)
+    end)
+    
+    -- Floating Restore Button (Hidden by default)
+    local RestoreBtn = Instance.new("TextButton")
+    RestoreBtn.Name = "RestoreBtn"
+    RestoreBtn.Size = UDim2.fromOffset(50, 50)
+    RestoreBtn.Position = UDim2.new(1, -60, 0, 10)
+    RestoreBtn.BackgroundColor3 = color
+    RestoreBtn.Text = "+"
+    RestoreBtn.Font = Enum.Font.GothamBold
+    RestoreBtn.TextSize = 24
+    RestoreBtn.TextColor3 = Color3.white
+    RestoreBtn.AutoButtonColor = false
+    RestoreBtn.Visible = false
+    RestoreBtn.Parent = ScreenGui
+    RestoreBtn.ZIndex = 1000
+    
+    local RestoreCorner = Instance.new("UICorner")
+    RestoreCorner.CornerRadius = UDim.new(0, 25)
+    RestoreCorner.Parent = RestoreBtn
+    
+    local RestoreStroke = Instance.new("UIStroke")
+    RestoreStroke.Color = Color3.white
+    RestoreStroke.Thickness = 2
+    RestoreStroke.Parent = RestoreBtn
+    
+    local RestoreShadow = Instance.new("ImageLabel")
+    RestoreShadow.Image = "rbxassetid://297774371"
+    RestoreShadow.ImageColor3 = Color3.fromRGB(80, 40, 120)
+    RestoreShadow.ImageTransparency = 0.3
+    RestoreShadow.ScaleType = Enum.ScaleType.Slice
+    RestoreShadow.SliceCenter = Rect.new(20, 20, 280, 280)
+    RestoreShadow.BackgroundTransparency = 1
+    RestoreShadow.Size = UDim2.new(1, 20, 1, 20)
+    RestoreShadow.Position = UDim2.fromOffset(-10, -10)
+    RestoreShadow.ZIndex = -1
+    RestoreShadow.Parent = RestoreBtn
+    
+    -- Drag restore button
+    local restoreDragging, restoreDragInput, restoreDragStart, restoreStartPos
+    
+    RestoreBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            restoreDragging = true
+            restoreDragStart = input.Position
+            restoreStartPos = RestoreBtn.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    restoreDragging = false
+                end
+            end)
         end
     end)
     
-    -- Drag
+    RestoreBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or
+           input.UserInputType == Enum.UserInputType.Touch then
+            restoreDragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == restoreDragInput and restoreDragging then
+            local delta = input.Position - restoreDragStart
+            Tween(RestoreBtn, {
+                Position = UDim2.new(
+                    restoreStartPos.X.Scale, restoreStartPos.X.Offset + delta.X,
+                    restoreStartPos.Y.Scale, restoreStartPos.Y.Offset + delta.Y
+                )
+            }, 0.08)
+        end
+    end)
+    
+    RestoreBtn.MouseEnter:Connect(function()
+        Tween(RestoreBtn, {Size = UDim2.fromOffset(55, 55)}, 0.2)
+        Tween(RestoreBtn, {BackgroundColor3 = Color3.fromRGB(140, 70, 200)}, 0.2)
+    end)
+    
+    RestoreBtn.MouseLeave:Connect(function()
+        Tween(RestoreBtn, {Size = UDim2.fromOffset(50, 50)}, 0.2)
+        Tween(RestoreBtn, {BackgroundColor3 = color}, 0.2)
+    end)
+    
+    local minimized = false
+    
+    Minimize.MouseButton1Click:Connect(function()
+        minimized = true
+        Tween(Main, {Size = UDim2.fromOffset(0, 0)}, 0.3)
+        Tween(Shadow, {ImageTransparency = 1}, 0.3)
+        task.wait(0.3)
+        Main.Visible = false
+        RestoreBtn.Visible = true
+        Tween(RestoreBtn, {Size = UDim2.fromOffset(50, 50)}, 0.3)
+    end)
+    
+    RestoreBtn.MouseButton1Click:Connect(function()
+        if not restoreDragging then
+            minimized = false
+            RestoreBtn.Visible = false
+            Main.Visible = true
+            Shadow.ImageTransparency = 0.4
+            Tween(Main, {Size = UDim2.fromOffset(380, 420)}, 0.3)
+        end
+    end)
+    
+    -- Drag Main Window
     local dragging, dragInput, dragStart, startPos
     
     TitleBar.InputBegan:Connect(function(input)
@@ -206,17 +315,21 @@ function VoidMobile:CreateWindow(config)
                     startPos.X.Scale, startPos.X.Offset + delta.X,
                     startPos.Y.Scale, startPos.Y.Offset + delta.Y
                 )
-            }, 0.1)
+            }, 0.08)
         end
     end)
     
     -- Tab Bar
-    local TabBar = Instance.new("Frame")
+    local TabBar = Instance.new("ScrollingFrame")
     TabBar.Name = "TabBar"
-    TabBar.Size = UDim2.new(1, -16, 0, 36)
-    TabBar.Position = UDim2.fromOffset(8, 46)
+    TabBar.Size = UDim2.new(1, -16, 0, 38)
+    TabBar.Position = UDim2.fromOffset(8, 48)
     TabBar.BackgroundColor3 = Color3.fromRGB(20, 12, 28)
     TabBar.BorderSizePixel = 0
+    TabBar.ScrollBarThickness = 0
+    TabBar.CanvasSize = UDim2.fromOffset(0, 0)
+    TabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+    TabBar.ScrollingDirection = Enum.ScrollingDirection.X
     TabBar.Parent = Main
     Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
     
@@ -227,14 +340,15 @@ function VoidMobile:CreateWindow(config)
     
     local TabPadding = Instance.new("UIPadding")
     TabPadding.PaddingLeft = UDim.new(0, 6)
-    TabPadding.PaddingTop = UDim.new(0, 4)
+    TabPadding.PaddingTop = UDim.new(0, 5)
+    TabPadding.PaddingRight = UDim.new(0, 6)
     TabPadding.Parent = TabBar
     
     -- Content Area
     local Content = Instance.new("Frame")
     Content.Name = "Content"
-    Content.Size = UDim2.new(1, -16, 1, -98)
-    Content.Position = UDim2.fromOffset(8, 90)
+    Content.Size = UDim2.new(1, -16, 1, -102)
+    Content.Position = UDim2.fromOffset(8, 94)
     Content.BackgroundColor3 = Color3.fromRGB(20, 12, 28)
     Content.BorderSizePixel = 0
     Content.Parent = Main
@@ -263,7 +377,7 @@ function VoidMobile:CreateWindow(config)
         -- Tab Button
         local TabBtn = Instance.new("TextButton")
         TabBtn.Name = tabName
-        TabBtn.Size = UDim2.fromOffset(85, 28)
+        TabBtn.Size = UDim2.fromOffset(90, 28)
         TabBtn.BackgroundColor3 = Color3.fromRGB(35, 20, 50)
         TabBtn.Text = tabName
         TabBtn.Font = Enum.Font.GothamBold
@@ -303,6 +417,18 @@ function VoidMobile:CreateWindow(config)
             TabContent.Visible = true
         end)
         
+        TabBtn.MouseEnter:Connect(function()
+            if TabBtn.BackgroundColor3 ~= color then
+                Tween(TabBtn, {BackgroundColor3 = Color3.fromRGB(45, 25, 60)}, 0.2)
+            end
+        end)
+        
+        TabBtn.MouseLeave:Connect(function()
+            if TabBtn.BackgroundColor3 ~= color then
+                Tween(TabBtn, {BackgroundColor3 = Color3.fromRGB(35, 20, 50)}, 0.2)
+            end
+        end)
+        
         Tab.Button = TabBtn
         Tab.Content = TabContent
         table.insert(Window.Tabs, Tab)
@@ -317,7 +443,7 @@ function VoidMobile:CreateWindow(config)
         
         function Tab:Label(text)
             local LabelFrame = Instance.new("Frame")
-            LabelFrame.Size = UDim2.new(1, -6, 0, 30)
+            LabelFrame.Size = UDim2.new(1, -6, 0, 32)
             LabelFrame.BackgroundColor3 = Color3.fromRGB(30, 18, 40)
             LabelFrame.BorderSizePixel = 0
             LabelFrame.Parent = TabContent
@@ -346,7 +472,7 @@ function VoidMobile:CreateWindow(config)
             callback = callback or function() end
             
             local BtnFrame = Instance.new("TextButton")
-            BtnFrame.Size = UDim2.new(1, -6, 0, 36)
+            BtnFrame.Size = UDim2.new(1, -6, 0, 38)
             BtnFrame.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
             BtnFrame.Text = ""
             BtnFrame.AutoButtonColor = false
@@ -387,6 +513,14 @@ function VoidMobile:CreateWindow(config)
                 Tween(BtnFrame, {BackgroundColor3 = Color3.fromRGB(80, 40, 120)}, 0.1)
                 callback()
             end)
+            
+            BtnFrame.MouseEnter:Connect(function()
+                Tween(BtnFrame, {BackgroundColor3 = Color3.fromRGB(100, 50, 150)}, 0.2)
+            end)
+            
+            BtnFrame.MouseLeave:Connect(function()
+                Tween(BtnFrame, {BackgroundColor3 = Color3.fromRGB(80, 40, 120)}, 0.2)
+            end)
         end
         
         function Tab:Toggle(text, default, callback)
@@ -394,7 +528,7 @@ function VoidMobile:CreateWindow(config)
             local toggled = default or false
             
             local TogFrame = Instance.new("TextButton")
-            TogFrame.Size = UDim2.new(1, -6, 0, 36)
+            TogFrame.Size = UDim2.new(1, -6, 0, 38)
             TogFrame.BackgroundColor3 = Color3.fromRGB(30, 18, 40)
             TogFrame.Text = ""
             TogFrame.AutoButtonColor = false
@@ -413,20 +547,20 @@ function VoidMobile:CreateWindow(config)
             TogText.Parent = TogFrame
             
             local TogSwitch = Instance.new("Frame")
-            TogSwitch.Size = UDim2.fromOffset(44, 22)
-            TogSwitch.Position = UDim2.new(1, -52, 0.5, -11)
+            TogSwitch.Size = UDim2.fromOffset(46, 24)
+            TogSwitch.Position = UDim2.new(1, -54, 0.5, -12)
             TogSwitch.BackgroundColor3 = toggled and color or Color3.fromRGB(40, 25, 50)
             TogSwitch.BorderSizePixel = 0
             TogSwitch.Parent = TogFrame
-            Instance.new("UICorner", TogSwitch).CornerRadius = UDim.new(0, 11)
+            Instance.new("UICorner", TogSwitch).CornerRadius = UDim.new(0, 12)
             
             local TogCircle = Instance.new("Frame")
-            TogCircle.Size = UDim2.fromOffset(18, 18)
+            TogCircle.Size = UDim2.fromOffset(20, 20)
             TogCircle.Position = toggled and UDim2.fromOffset(24, 2) or UDim2.fromOffset(2, 2)
             TogCircle.BackgroundColor3 = Color3.white
             TogCircle.BorderSizePixel = 0
             TogCircle.Parent = TogSwitch
-            Instance.new("UICorner", TogCircle).CornerRadius = UDim.new(0, 9)
+            Instance.new("UICorner", TogCircle).CornerRadius = UDim.new(0, 10)
             
             TogFrame.MouseButton1Click:Connect(function()
                 toggled = not toggled
@@ -441,6 +575,14 @@ function VoidMobile:CreateWindow(config)
                 end
                 
                 callback(toggled)
+            end)
+            
+            TogFrame.MouseEnter:Connect(function()
+                Tween(TogFrame, {BackgroundColor3 = Color3.fromRGB(35, 20, 45)}, 0.2)
+            end)
+            
+            TogFrame.MouseLeave:Connect(function()
+                Tween(TogFrame, {BackgroundColor3 = Color3.fromRGB(30, 18, 40)}, 0.2)
             end)
             
             local TogObj = {}
@@ -462,7 +604,7 @@ function VoidMobile:CreateWindow(config)
             local value = default or min
             
             local SliderFrame = Instance.new("Frame")
-            SliderFrame.Size = UDim2.new(1, -6, 0, 48)
+            SliderFrame.Size = UDim2.new(1, -6, 0, 50)
             SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 18, 40)
             SliderFrame.BorderSizePixel = 0
             SliderFrame.Parent = TabContent
@@ -492,7 +634,7 @@ function VoidMobile:CreateWindow(config)
             
             local SliderBack = Instance.new("Frame")
             SliderBack.Size = UDim2.new(1, -20, 0, 6)
-            SliderBack.Position = UDim2.fromOffset(10, 32)
+            SliderBack.Position = UDim2.fromOffset(10, 34)
             SliderBack.BackgroundColor3 = Color3.fromRGB(40, 25, 50)
             SliderBack.BorderSizePixel = 0
             SliderBack.Parent = SliderFrame
@@ -542,7 +684,7 @@ function VoidMobile:CreateWindow(config)
             callback = callback or function() end
             
             local TextFrame = Instance.new("Frame")
-            TextFrame.Size = UDim2.new(1, -6, 0, 60)
+            TextFrame.Size = UDim2.new(1, -6, 0, 62)
             TextFrame.BackgroundColor3 = Color3.fromRGB(30, 18, 40)
             TextFrame.BorderSizePixel = 0
             TextFrame.Parent = TabContent
@@ -560,7 +702,7 @@ function VoidMobile:CreateWindow(config)
             TextLabel.Parent = TextFrame
             
             local Textbox = Instance.new("TextBox")
-            Textbox.Size = UDim2.new(1, -20, 0, 28)
+            Textbox.Size = UDim2.new(1, -20, 0, 30)
             Textbox.Position = UDim2.fromOffset(10, 28)
             Textbox.BackgroundColor3 = Color3.fromRGB(40, 25, 50)
             Textbox.BorderSizePixel = 0
@@ -604,7 +746,7 @@ function VoidMobile:CreateWindow(config)
             local selected = default or (options[1] or "Select")
             
             local DropFrame = Instance.new("Frame")
-            DropFrame.Size = UDim2.new(1, -6, 0, 60)
+            DropFrame.Size = UDim2.new(1, -6, 0, 62)
             DropFrame.BackgroundColor3 = Color3.fromRGB(30, 18, 40)
             DropFrame.BorderSizePixel = 0
             DropFrame.Parent = TabContent
@@ -622,7 +764,7 @@ function VoidMobile:CreateWindow(config)
             DropLabel.Parent = DropFrame
             
             local DropBtn = Instance.new("TextButton")
-            DropBtn.Size = UDim2.new(1, -20, 0, 28)
+            DropBtn.Size = UDim2.new(1, -20, 0, 30)
             DropBtn.Position = UDim2.fromOffset(10, 28)
             DropBtn.BackgroundColor3 = Color3.fromRGB(40, 25, 50)
             DropBtn.BorderSizePixel = 0
@@ -640,7 +782,7 @@ function VoidMobile:CreateWindow(config)
             DropStroke.Parent = DropBtn
             
             local Arrow = Instance.new("TextLabel")
-            Arrow.Size = UDim2.fromOffset(20, 28)
+            Arrow.Size = UDim2.fromOffset(20, 30)
             Arrow.Position = UDim2.new(1, -24, 0, 0)
             Arrow.BackgroundTransparency = 1
             Arrow.Text = "▼"
@@ -651,7 +793,7 @@ function VoidMobile:CreateWindow(config)
             
             local DropList = Instance.new("Frame")
             DropList.Size = UDim2.new(1, -20, 0, math.min(#options * 28, 140))
-            DropList.Position = UDim2.fromOffset(10, 60)
+            DropList.Position = UDim2.fromOffset(10, 62)
             DropList.BackgroundColor3 = Color3.fromRGB(35, 20, 45)
             DropList.BorderSizePixel = 0
             DropList.Visible = false
@@ -697,7 +839,7 @@ function VoidMobile:CreateWindow(config)
                     selected = tostring(option)
                     DropBtn.Text = selected
                     expanded = false
-                    Tween(DropFrame, {Size = UDim2.new(1, -6, 0, 60)}, 0.2)
+                    Tween(DropFrame, {Size = UDim2.new(1, -6, 0, 62)}, 0.2)
                     task.wait(0.2)
                     DropList.Visible = false
                     Arrow.Text = "▼"
@@ -716,16 +858,24 @@ function VoidMobile:CreateWindow(config)
             DropBtn.MouseButton1Click:Connect(function()
                 expanded = not expanded
                 if expanded then
-                    local newHeight = 60 + math.min(#options * 28, 140) + 6
+                    local newHeight = 62 + math.min(#options * 28, 140) + 6
                     Tween(DropFrame, {Size = UDim2.new(1, -6, 0, newHeight)}, 0.2)
                     DropList.Visible = true
                     Arrow.Text = "▲"
                 else
-                    Tween(DropFrame, {Size = UDim2.new(1, -6, 0, 60)}, 0.2)
+                    Tween(DropFrame, {Size = UDim2.new(1, -6, 0, 62)}, 0.2)
                     task.wait(0.2)
                     DropList.Visible = false
                     Arrow.Text = "▼"
                 end
+            end)
+            
+            DropBtn.MouseEnter:Connect(function()
+                Tween(DropBtn, {BackgroundColor3 = Color3.fromRGB(50, 30, 60)}, 0.2)
+            end)
+            
+            DropBtn.MouseLeave:Connect(function()
+                Tween(DropBtn, {BackgroundColor3 = Color3.fromRGB(40, 25, 50)}, 0.2)
             end)
         end
         
@@ -811,7 +961,7 @@ function VoidMobile:CreateWindow(config)
     
     -- Entrance animation
     Main.Size = UDim2.fromOffset(0, 0)
-    Tween(Main, {Size = UDim2.fromOffset(340, 480)}, 0.4)
+    Tween(Main, {Size = UDim2.fromOffset(380, 420)}, 0.4)
     
     -- Welcome notification
     if config.WelcomeMessage then
